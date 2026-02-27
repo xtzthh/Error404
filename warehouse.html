@@ -657,3 +657,51 @@
           };
         }
       });
+      try {
+        localStorage.setItem(RDE_KEY, JSON.stringify(decisions));
+        localStorage.setItem(BLOCK_TWIN_KEY, JSON.stringify(blockTwin));
+        localStorage.setItem(RDE_KPI_KEY, JSON.stringify({
+          kg_saved_potential: Number(totalKgSaved.toFixed(0)),
+          loss_prevented_inr: Number(totalLossPrevented.toFixed(0)),
+          lots_rescued: lotsRescued,
+          generated_at: new Date().toISOString()
+        }));
+      } catch (_) {
+        // Ignore storage write errors.
+      }
+
+      const kgEl = document.getElementById('kpiKgSaved');
+      const lossEl = document.getElementById('kpiLossPrevented');
+      const lotsEl = document.getElementById('kpiLotsRescued');
+      if (kgEl) kgEl.textContent = String(Number(totalKgSaved.toFixed(0)));
+      if (lossEl) lossEl.textContent = `₹${Number(totalLossPrevented.toFixed(0)).toLocaleString('en-IN')}`;
+      if (lotsEl) lotsEl.textContent = String(lotsRescued);
+    }
+
+    async function hydrateLiveBlockFromSensorFeed() {
+      try {
+        const res = await fetch(`https://api.thingspeak.com/channels/${LIVE_CHANNEL_ID}/feeds.json?api_key=${LIVE_READ_KEY}&results=1`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const feed = (json.feeds || [])[0];
+        if (!feed) return;
+
+        const t = Number.parseFloat(feed.field1);
+        const h = Number.parseFloat(feed.field2);
+        const nh3 = Number.parseFloat(feed.field4);
+        const co2 = Number.parseFloat(feed.field5);
+
+        localStorage.setItem(LIVE_BLOCK_KEY, JSON.stringify({
+          block: 'BLOCK_05',
+          timestamp: feed.created_at || new Date().toISOString(),
+          temperature_c: Number.isFinite(t) ? t : null,
+          humidity_pct: Number.isFinite(h) ? h : null,
+          nh3_ppm: Number.isFinite(nh3) ? nh3 : null,
+          co2_ppm: Number.isFinite(co2) ? co2 : null,
+          source: 'warehouse_feed'
+        }));
+        loadInventory();
+      } catch (_) {
+        // Keep last known local telemetry if feed is unavailable.
+      }
+    }
