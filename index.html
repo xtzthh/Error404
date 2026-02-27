@@ -57,3 +57,17 @@
     text-shadow: 0 0 10px rgba(255, 68, 68, 0.45);
     filter: drop-shadow(0 0 8px rgba(255, 68, 68, 0.45));
   }
+  .demo-gas-card {
+    border-color: #ff9f1a !important;
+    box-shadow: 0 0 18px rgba(255, 159, 26, 0.4);
+    animation: demo-alert-pulse 1.05s ease-in-out infinite;
+  }
+  . {
+    color: #ffb347 !important;
+    text-shadow: 0 0 10px rgba(255, 159, 26, 0.4);
+    filter: drop-shadow(0 0 8px rgba(255, 159, 26, 0.35));
+  }
+  @keyframes demo-alert-pulse {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
