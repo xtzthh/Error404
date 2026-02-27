@@ -318,7 +318,23 @@
 
 <script>
 // Dashboard State
- [
+var live = true;
+var chartIndoorTemp, chartIndoorHum;
+var chartData = {labels: [], indoorTemp: [], indoorHum: []};
+var maxPoints = 30;
+var weatherData = { temp: null, humidity: null };
+var weatherCity = localStorage.getItem('as_weather_city') || "Vadodara";
+var liveBlockKey = 'agri_live_block_b05';
+var channelId = "3214038";
+var readKey = "XIZY6ZXHB5VCKY2T";
+var lastPacketTime = Date.now();
+var indoorDemoRunning = false;
+var indoorDemoToastTimer = null;
+var indoorDemoCaseIndex = 0;
+var indoorStabilizeTimer = null;
+var co2DisplayPpm = 520;
+var co2DriftDir = 1;
+var indoorDemoCases = [
   {
     name: 'TEMP_HUMIDITY_EVENT',
     focus: ['temp', 'hum'],
