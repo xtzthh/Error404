@@ -136,4 +136,52 @@
       </div>
     </aside>
 
+    <main class="main-content">
+      <div class="cyber-card warehouse-wrap">
+        <div class="corner-br"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <div>
+            <h1 style="margin:0; font-size: 22px;">WAREHOUSE_BLOCK_MAP</h1>
+            <p class="military-tag" style="margin:8px 0 0 0;">FULL_VIEW / BLOCKWISE_STORAGE_UNITS</p>
+          </div>
+          <button class="btn-cyber" id="refreshWarehouseBtn">REFRESH</button>
+        </div>
+
+        <div class="top-metrics">
+          <div class="metric-box">
+            <div id="occupiedCount" class="metric-value">0</div>
+            <div class="metric-label">OCCUPIED_BLOCKS</div>
+          </div>
+          <div class="metric-box">
+            <div id="vacantCount" class="metric-value">9</div>
+            <div class="metric-label">VACANT_BLOCKS</div>
+          </div>
+          <div class="metric-box">
+            <div id="nearExpiryCount" class="metric-value">0</div>
+            <div class="metric-label">WARNING_BLOCKS</div>
+          </div>
+          <div class="metric-box">
+            <div id="expiredCount" class="metric-value">0</div>
+            <div class="metric-label">RISK_BLOCKS</div>
+          </div>
+        </div>
+        <div class="kpi-metrics">
+          <div class="metric-box">
+            <div id="kpiKgSaved" class="metric-value">0</div>
+            <div class="metric-label">KG_SAVED_POTENTIAL</div>
+          </div>
+          <div class="metric-box">
+            <div id="kpiLossPrevented" class="metric-value">₹0</div>
+            <div class="metric-label">LOSS_PREVENTED_EST</div>
+          </div>
+          <div class="metric-box">
+            <div id="kpiLotsRescued" class="metric-value">0</div>
+            <div class="metric-label">LOTS_RESCUED</div>
+          </div>
+        </div>
+
+        <div id="warehouseGrid" class="warehouse-grid"></div>
+      </div>
+    </main>
+  </div>
     
