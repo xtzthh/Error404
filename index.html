@@ -860,3 +860,47 @@ async function startApp() {
       setInterval(performAggressiveFetch, 15000);
       performAggressiveFetch(); // Immediate sync
     });
+    const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } });
+},{threshold:0.12});
+revealEls.forEach(el=>io.observe(el));
+    
+  } catch (e) { console.error('App initialization failed: ', e); }
+}
+
+function succeedLogin(user) {
+  document.getElementById('loginScreen').style.display = 'none';
+  localStorage.setItem('as_user_role', user);
+  startApp();
+}
+
+function doLogin() {
+  var u = document.getElementById('username').value.trim();
+  var p = document.getElementById('password').value.trim();
+  if (u === "judge" && p === "agri123") succeedLogin(u);
+  else alert('Invalid credentials');
+}
+
+function useGuest() { succeedLogin('guest'); }
+function logout() { localStorage.removeItem('as_user_role'); location.reload(); }
+
+window.addEventListener('load', () => {
+  if (localStorage.getItem('as_user_role')) {
+    document.getElementById('loginScreen').style.display = 'none';
+    startApp();
+  }
+});
+
+// Purge button: clear cached UI state and reload
+const clearBtn = document.getElementById('clearBtn');
+if (clearBtn) {
+  clearBtn.onclick = () => {
+    const ok = confirm('PURGE_CACHED_STATE? This clears local UI data.');
+    if (!ok) return;
+    localStorage.removeItem('as_weather_city');
+    localStorage.removeItem('as_user_role');
+    localStorage.removeItem('theme');
+    location.reload();
+  };
+}
