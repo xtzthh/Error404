@@ -70,3 +70,43 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.6; transform: scale(0.95); }
     }
+    .block-id { font-size: 30px; font-weight: 900; color: var(--text-primary); font-family: 'Roboto Mono', monospace; }
+    .block-status { margin-top: 10px; font-size: 20px; font-weight: 900; color: var(--text-muted); letter-spacing: 1px; }
+    .block-status.safe { color: var(--neon-green); }
+    .block-status.warning { color: #ffb347; }
+    .block-status.risk { color: #ff4444; }
+    .block-tooltip {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      min-width: 220px;
+      padding: 12px;
+      border: 1px solid var(--neon-green);
+      background: var(--overlay-bg);
+      font-family: 'Roboto Mono', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 20;
+    }
+    .warehouse-block:hover .block-tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .top-metrics { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin-top: 16px; }
+    .kpi-metrics { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 12px; margin-top: 12px; }
+    .metric-box { padding: 14px; border: 1px solid var(--cyber-border); background: rgba(0, 255, 136, 0.02); }
+    .metric-value { font-size: 22px; font-weight: 900; color: var(--neon-green); font-family: 'Roboto Mono', monospace; }
+    #nearExpiryCount { color: #ffb347; text-shadow: 0 0 8px rgba(255, 159, 26, 0.35); }
+    #expiredCount { color: #ff4444; text-shadow: 0 0 8px rgba(255, 68, 68, 0.35); }
+    .metric-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+    @media (max-width: 1200px) {
+      .warehouse-grid { grid-template-columns: repeat(2, minmax(210px, 1fr)); }
+      .top-metrics { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .kpi-metrics { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    }
+    @media (max-width: 900px) {
+      .grid-layout { grid-template-columns: 1fr; }
+      .sidebar-hud { display: none; }
+      .warehouse-grid { grid-template-columns: 1fr; }
+    }
