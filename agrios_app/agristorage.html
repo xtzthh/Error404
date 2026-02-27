@@ -148,3 +148,86 @@
             gap: 15px;
             margin-top: 20px;
         }
+        @keyframes dispatch-item-reveal {
+      from { opacity: 0; transform: translateX(5px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .dispatch-line:nth-child(1) { animation-delay: 0.05s; }
+    .dispatch-line:nth-child(2) { animation-delay: 0.10s; }
+    .dispatch-line:nth-child(3) { animation-delay: 0.15s; }
+    .dispatch-line:nth-child(4) { animation-delay: 0.20s; }
+    .dispatch-line:nth-child(5) { animation-delay: 0.25s; }
+    .dispatch-line:nth-child(6) { animation-delay: 0.30s; }
+    .dispatch-line:nth-child(7) { animation-delay: 0.35s; }
+    .dispatch-line:nth-child(8) { animation-delay: 0.40s; }
+    .dispatch-line:nth-child(9) { animation-delay: 0.45s; }
+    .dispatch-line:nth-child(10) { animation-delay: 0.50s; }
+    .dispatch-line:nth-child(11) { animation-delay: 0.55s; }
+    .dispatch-line:nth-child(12) { animation-delay: 0.60s; }
+    .dispatch-line:nth-child(13) { animation-delay: 0.65s; }
+
+    .dispatch-line:last-child { border-bottom: none; }
+    .dispatch-val { font-weight: 900; color: #059669; }
+    .dispatch-val.critical { color: #dc2626; }
+    .dispatch-val.warn { color: #d97706; }
+    .dispatch-explain {
+      margin-top: 10px;
+      font-size: 10px;
+      color: #64748b;
+      font-style: italic;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+    }
+    .dispatch-loader {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      justify-content: center;
+      z-index: 10;
+    }
+    .dispatch-loader.show { display: flex; }
+    .dispatch-infinity {
+      width: 60px;
+      height: 60px;
+    }
+    .dispatch-actions {
+      position: sticky;
+      bottom: 0;
+      background: #ffffff;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 10px;
+      z-index: 3;
+    }
+    .dispatch-infinity path.track {
+      stroke: rgba(0, 255, 136, 0.2);
+    }
+    .dispatch-infinity path.live {
+      stroke: var(--neon-green);
+      animation: dispatch-loader-travel 1.1s linear infinite;
+    }
+    @keyframes dispatch-loader-travel {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -100; }
+    }
+    .inventory-row-selected td {
+      border-top-color: var(--neon-green) !important;
+      border-bottom-color: var(--neon-green) !important;
+      box-shadow: inset 0 0 0 1px rgba(0, 255, 136, 0.15);
+      background: rgba(0, 255, 136, 0.06) !important;
+    }
+  </style>
+</head>
+<body>
+    <div class="mesh-bg"></div>
+    <div class="scanlines"></div>
+
+  <div class="grid-layout">
+    <aside class="sidebar-hud">
+      <div>
+        <div class="brand"><div class="logo-square">AS</div> AGRITECH</div>
+        <p class="military-tag" style="margin-top:10px; color: var(--neon-green)">[ STORAGE_LINK_ACTIVE ]</p>
