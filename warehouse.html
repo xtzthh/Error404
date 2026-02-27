@@ -363,3 +363,42 @@
       document.getElementById('nearExpiryCount').textContent = String(warningCount);
       document.getElementById('expiredCount').textContent = String(riskCount);
     }
+
+    function loadFromLocalCache() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.inventory)) return parsed.inventory;
+        return [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    async function loadInventory() {
+      let loaded = false;
+      try {
+        const response = await fetch(STORAGE_API);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            inventory = data;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            loaded = true;
+          }
+        }
+      } catch (_) {}
+
+      if (loaded && Array.isArray(inventory) && inventory.length === 0) {
+        const local = loadFromLocalCache();
+        if (Array.isArray(local) && local.length > 0) {
+          inventory = local;
+        }
+      } else if (!loaded) {
+        inventory = loadFromLocalCache();
+      }
+      persistRdeDecisions();
+      renderWarehouseGrid();
+    }
