@@ -146,3 +146,52 @@
     0% { stroke-dashoffset: 0; }
     100% { stroke-dashoffset: -100; }
   }
+
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--cyber-black); position: fixed; inset: 0; z-index: 9999; }
+  .login-card { width: 420px; padding: 40px; text-align: center; }
+  .login-card input { width: 100%; padding: 14px; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--neon-green); font-family: 'Roboto Mono', monospace; margin-bottom: 15px; outline: none; }
+  .login-card input:focus { border-color: var(--neon-green); box-shadow: 0 0 10px var(--cyber-border-glow); }
+  @media (max-width: 1100px) { .grid-layout { grid-template-columns: 1fr; } .sidebar-hud { display: none; } .content-row { grid-template-columns: 1fr; } }
+  
+  .block-icon { font-size: 32px; margin-bottom: 10px; filter: drop-shadow(0 0 5px var(--neon-green)); }
+</style>
+</head>
+<body>
+
+<div class="mesh-bg"></div>
+<div class="scanlines"></div>
+
+<div id="loginScreen" class="login-screen">
+  <div class="login-card cyber-card">
+    <div class="corner-br"></div>
+    <div class="brand" style="justify-content:center; margin-bottom: 20px;">
+      <div class="logo-square">AS</div> AGRITECH
+    </div>
+    <h2 style="margin:0 0 8px 0; color:var(--neon-green); font-style:italic;">LOGIN</h2>
+    <input id="username" placeholder="Username (judge)" />
+    <input id="password" placeholder="Password (agri123)" type="password" />
+    <div style="display:flex;gap:10px;margin-top:8px;flex-direction:column">
+      <button class="btn-cyber active" style="width:100%" onclick="doLogin()">Authenticate</button>
+      <button class="btn-cyber" style="width:100%" onclick="useGuest()">Guest Protocol</button>
+    </div>
+    <div class="military-tag" style="margin-top:20px; font-size: 9px;">Credentials: judge / agri123</div>
+  </div>
+</div>
+
+<div id="app" class="app" style="display:none;">
+  <div class="grid-layout">
+    <aside class="sidebar-hud">
+      <div>
+        <div class="brand"><div class="logo-square">AS</div> AGRITECH</div>
+        <p class="military-tag" style="margin-top:10px; color: var(--neon-green)">[ SYSTEM ACTIVE ]</p>
+        <nav style="margin-top: 40px; display: flex; flex-direction: column; gap: 5px;">
+          <a href="landing.html" class="nav-item"><span>🏠</span> HOME_TERMINAL</a>
+          <a href="index.html" class="nav-item active"><span class="glow-icon">📊</span> INDOOR_DASHBOARD</a>
+          
+          <a href="agri-storage.html" class="nav-item"><span>📦</span> STORAGE_UNITS</a>
+          <a href="warehouse.html" class="nav-item"><span>🏬</span> WAREHOUSE</a>
+        </nav>
+      </div>
+      <div class="cyber-card" style="padding: 15px;">
+        <div class="corner-br"></div>
+      
