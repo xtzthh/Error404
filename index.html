@@ -439,3 +439,77 @@ function stabilizeIndoorValues(targets) {
     }
   }, 100);
 }
+
+function runIndoorDemo() {
+  if (indoorDemoRunning) return;
+  indoorDemoRunning = true;
+  var demoCase = indoorDemoCases[indoorDemoCaseIndex % indoorDemoCases.length];
+  indoorDemoCaseIndex += 1;
+  var btn = document.getElementById('indoorDemoBtn');
+  var topBtn = document.getElementById('indoorDemoBtnTop');
+  var tempCard = document.getElementById('tempCard');
+  var humCard = document.getElementById('humCard');
+  var soilCard = document.getElementById('soilCard');
+  var airCard = document.getElementById('airCard');
+  var success = demoCase.success;
+  var focus = Array.isArray(demoCase.focus) ? demoCase.focus : [];
+
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('active');
+    btn.innerText = 'DEMO_RUNNING...';
+  }
+  if (topBtn) {
+    topBtn.disabled = true;
+    topBtn.classList.add('active');
+    topBtn.innerText = 'DEMO_RUNNING...';
+  }
+  if (tempCard && focus.includes('temp')) tempCard.classList.add('demo-alert-card');
+  if (humCard && focus.includes('hum')) humCard.classList.add('demo-alert-card');
+  if (soilCard && focus.includes('nh3')) soilCard.classList.add('demo-gas-card');
+  if (airCard && focus.includes('co2')) airCard.classList.add('demo-gas-card');
+
+  var tempEl = document.getElementById('cardTemp');
+  var humEl = document.getElementById('cardHum');
+  var soilEl = document.getElementById('cardSoil');
+  var airEl = document.getElementById('cardAir');
+  if (tempEl) tempEl.innerText = demoCase.temp.toFixed(1) + ' °C';
+  if (humEl) humEl.innerText = demoCase.hum.toFixed(1) + ' %';
+  if (soilEl) soilEl.innerText = demoCase.nh3.toFixed(1) + ' ppm';
+  if (airEl) airEl.innerText = demoCase.co2.toFixed(0) + ' ppm';
+  persistLiveBlockTelemetry({
+    temperature_c: demoCase.temp,
+    humidity_pct: demoCase.hum,
+    nh3_ppm: demoCase.nh3,
+    co2_ppm: demoCase.co2,
+    source: 'indoor_demo'
+  });
+
+  var focusLabel = focus.map(function (key) {
+    if (key === 'temp') return 'TEMP';
+    if (key === 'hum') return 'HUMIDITY';
+    if (key === 'nh3') return 'NH3';
+    if (key === 'co2') return 'CO2';
+    return key.toUpperCase();
+  }).join(' + ');
+  showIndoorDemoToast('ALERT: ' + focusLabel + ' CRITICAL', 'alert');
+
+  setTimeout(function () {
+    showIndoorDemoToast('SYSTEM TAKING ACTION: VENTILATION + SCRUBBER ON', 'success');
+  }, 1400);
+
+  setTimeout(function () {
+    if (success) {
+      showIndoorDemoToast('RECOVERY CONFIRMED: ENVIRONMENT STABILIZED', 'success');
+      stabilizeIndoorValues({
+        temp: 29.8,
+        hum: 57.5,
+        nh3: 24.0,
+        co2: 520.0
+      });
+      clearIndoorDemoAlert();
+    } else {
+      showIndoorDemoToast('SMS SENT TO FARMER: MANUAL CHECK REQUIRED', 'alert');
+      setTimeout(clearIndoorDemoAlert, 2200);
+    }
+  }, 3200);
