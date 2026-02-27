@@ -882,25 +882,3 @@ function doLogin() {
   else alert('Invalid credentials');
 }
 
-function useGuest() { succeedLogin('guest'); }
-function logout() { localStorage.removeItem('as_user_role'); location.reload(); }
-
-window.addEventListener('load', () => {
-  if (localStorage.getItem('as_user_role')) {
-    document.getElementById('loginScreen').style.display = 'none';
-    startApp();
-  }
-});
-
-// Purge button: clear cached UI state and reload
-const clearBtn = document.getElementById('clearBtn');
-if (clearBtn) {
-  clearBtn.onclick = () => {
-    const ok = confirm('PURGE_CACHED_STATE? This clears local UI data.');
-    if (!ok) return;
-    localStorage.removeItem('as_weather_city');
-    localStorage.removeItem('as_user_role');
-    localStorage.removeItem('theme');
-    location.reload();
-  };
-}
