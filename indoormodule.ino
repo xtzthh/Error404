@@ -244,3 +244,42 @@ void sendSMS(){
     modem.sendSMS(SMS_NUMBER, message);
   }
 }
+
+/************************************************************
+                CLOUD UPLOAD FUNCTION
+************************************************************/
+int statusToNumber(String s){
+  if(s=="SAFE") return 0;
+  if(s=="WARNING") return 1;
+  return 2;
+}
+
+void sendToThingSpeak(){
+
+  if(!client.connect(THINGSPEAK_SERVER,80)) return;
+
+  String url="/update?api_key="+String(THINGSPEAK_API_KEY)+
+  "&field1="+String(temperature)+
+  "&field2="+String(humidity)+
+  "&field3="+String(co2Value)+
+  "&field4="+String(nh3Value)+
+  "&field5="+String(fireStatus)+
+  "&field6="+String(vibrationStatus)+
+  "&field7="+String(statusToNumber(overallStatus));
+
+  client.print(String("GET ")+url+" HTTP/1.1\r\n");
+  client.print("Host: api.thingspeak.com\r\nConnection: close\r\n\r\n");
+  client.stop();
+}
+
+/************************************************************
+                GSM NETWORK CHECK
+************************************************************/
+void checkNetwork(){
+
+  if(!modem.isNetworkConnected()){
+    modem.restart();
+    modem.waitForNetwork();
+    modem.gprsConnect("www","","");
+  }
+}
