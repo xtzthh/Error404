@@ -413,7 +413,12 @@ function getSmoothedCo2Ppm(rawValue) {
     co2DisplayPpm += (co2DriftDir * 6) + jitter;
   }
 
-  
+  if (co2DisplayPpm >= maxPpm) {
+    co2DisplayPpm = maxPpm;
+    co2DriftDir = -1;
+  } else if (co2DisplayPpm <= minPpm) {
+    co2DisplayPpm = minPpm;
+    co2DriftDir = 1;
   }
 
   return co2DisplayPpm;
