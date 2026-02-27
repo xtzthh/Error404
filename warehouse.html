@@ -514,3 +514,67 @@
         reason: `ML market trend ${cropKey}: annual_trend ${model.trend_annual_pct}% | vol ${model.volatility_pct}% | conf ${Math.round((model.confidence || 0.65) * 100)}%`
       };
     }
+    function getBasePricePerKg(name) {
+      const upper = String(name || '').toUpperCase();
+      for (const key of Object.keys(BASE_PRICE_PER_KG)) {
+        if (key !== 'DEFAULT' && upper.includes(key)) return BASE_PRICE_PER_KG[key];
+      }
+      return BASE_PRICE_PER_KG.DEFAULT;
+    }
+
+    function qtyToKg(item) {
+      const q = Number(item?.qty || 0);
+      const unit = String(item?.unit || 'kg').toLowerCase();
+      if (!Number.isFinite(q) || q <= 0) return 0;
+      if (unit.includes('quintal')) return q * 100;
+      if (unit.includes('tonne') || unit.includes('ton')) return q * 1000;
+      if (unit.includes('bag')) return q * 50;
+      return q;
+    }
+
+    function parseBlockIndex(location) {
+      const m = String(location || '').toUpperCase().match(/BLOCK_(\d{1,2})/);
+      if (!m) return 5;
+      const n = Number.parseInt(m[1], 10);
+      return Number.isFinite(n) ? n : 5;
+    }
+
+    function travelHours(blockIndex, marketName) {
+      const base = marketName === 'VADODARA_MANDI' ? 1.2 : marketName === 'AHMEDABAD_MANDI' ? 3.4 : 4.1;
+      const spread = Math.abs(blockIndex - 5) * 0.12;
+      return base + spread;
+    }
+
+    function spoilageRiskFromEval(level) {
+      if (level === 'risk') return 88;
+      if (level === 'warning') return 58;
+      return 18;
+    }
+
+    function getDispatchAction(score) {
+      if (score >= 75) return 'DISPATCH_NOW';
+      if (score >= 50) return 'DISPATCH_TODAY';
+      if (score >= 30) return 'MONITOR_AND_PLAN';
+      return 'HOLD';
+    }
+
+    function getDispatchWindow(action) {
+      if (action === 'DISPATCH_NOW') return '<6H';
+      if (action === 'DISPATCH_TODAY') return '<24H';
+      if (action === 'MONITOR_AND_PLAN') return '24-48H';
+      return 'HOLD_48H+';
+    }
+
+    function bestMarketFor(item, marketSignal) {
+      const blockIndex = parseBlockIndex(item.location);
+      let best = null;
+      for (const m of MARKET_OPTIONS) {
+        const tHours = travelHours(blockIndex, m.name);
+        const travelScore = clamp100(100 - tHours * 12);
+        const routeScore = 0.55 * (marketSignal * m.basePrice) + 0.25 * travelScore + 0.20 * m.demand;
+        if (!best || routeScore > best.routeScore) {
+          best = { market: m.name, routeScore, travelHours: tHours };
+        }
+      }
+      return best;
+    }
