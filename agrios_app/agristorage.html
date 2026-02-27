@@ -435,3 +435,100 @@
       <div class="military-tag" id="dispatchNearestMarketHint" style="font-size:8px; margin-top:6px; color: var(--text-muted);">AUTO_NEAREST_MARKET: --</div>
     </div>
 
+
+    <div class="dispatch-row">
+      <label class="military-tag" style="font-size:9px;">TRANSPORT_MODE</label>
+      <select id="dispatchTransportMode" class="dispatch-field">
+        <option value="MINI_TRUCK">MINI_TRUCK</option>
+        <option value="TRUCK_10T">TRUCK_10T</option>
+        <option value="REEFER">REEFER</option>
+      </select>
+    </div>
+
+    <div id="dispatchResultBoxWrapper" style="position:relative; margin-top:20px;">
+      <div class="dispatch-result" id="dispatchResultBox">Select destination to compute travel estimate.</div>
+      <div id="dispatchLoader" class="dispatch-loader">
+        <svg class="dispatch-infinity" viewBox="-2 -2 44 44" aria-hidden="true">
+          <path
+            class="track"
+            fill="none"
+            stroke-width="4"
+            pathLength="100"
+            d="M29.76 18.72 c0 7.28-3.92 13.6-9.84 16.96 c-2.88 1.68-6.24 2.64-9.84 2.64 c-3.6 0-6.88-0.96-9.76-2.64 c0-7.28 3.92-13.52 9.84-16.96 c2.88-1.68 6.24-2.64 9.76-2.64 S26.88 17.04 29.76 18.72 c5.84 3.36 9.76 9.68 9.84 16.96 c-2.88 1.68-6.24 2.64-9.76 2.64 c-3.6 0-6.88-0.96-9.84-2.64 c-5.84-3.36-9.76-9.68-9.76-16.96 c0-7.28 3.92-13.6 9.76-16.96 C25.84 5.12 29.76 11.44 29.76 18.72z"
+          />
+          <path
+            class="live"
+            fill="none"
+            stroke-width="4"
+            stroke-dasharray="15, 85"
+            stroke-dashoffset="0"
+            stroke-linecap="round"
+            pathLength="100"
+            d="M29.76 18.72 c0 7.28-3.92 13.6-9.84 16.96 c-2.88 1.68-6.24 2.64-9.84 2.64 c-3.6 0-6.88-0.96-9.76-2.64 c0-7.28 3.92-13.52 9.84-16.96 c2.88-1.68 6.24-2.64 9.76-2.64 S26.88 17.04 29.76 18.72 c5.84 3.36 9.76 9.68 9.84 16.96 c-2.88 1.68-6.24 2.64-9.76 2.64 c-3.6 0-6.88-0.96-9.84-2.64 c-5.84-3.36-9.76-9.68-9.76-16.96 c0-7.28 3.92-13.6 9.76-16.96 C25.84 5.12 29.76 11.44 29.76 18.72z"
+          />
+        </svg>
+        <div class="military-tag" style="font-size:10px; color: var(--neon-green); text-align:center;">COMPUTING_DISPATCH_PLAN...</div>
+      </div>
+    </div>
+    <div class="dispatch-actions" style="display:flex; gap:10px; margin-top:12px;">
+      <button id="dispatchSubmitBtn" class="btn-cyber active" style="flex:1;">SUBMIT</button>
+      <button id="dispatchConfirmBtn" class="btn-cyber" style="flex:1;">CONFIRM_DISPATCH</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script>
+    // System Data Manager
+    const STORAGE_KEY = 'agri_storage_app_v2_hud';
+    const RDE_KEY = 'agri_rde_decisions_v1';
+    let inventory = [];
+    const STORAGE_API = '/api/storage';
+    let isWriteSyncInFlight = false;
+    let dispatchItemId = null;
+    let selectedDispatchItemId = null;
+
+    const uid = () => 'AS-' + Math.random().toString(36).slice(2, 9).toUpperCase();
+    const daysBetween = (a, b) => Math.ceil((b - a) / (1000 * 60 * 60 * 24));
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
+
+    function getBlockIdForLocation(loc) {
+      if (!loc) return null;
+      const m = String(loc).match(/BLOCK_(\d{1,2})/i);
+      if (m) {
+        const id = parseInt(m[1], 10);
+        if (id >= 1 && id <= 9) return id;
+      }
+      return null;
+    }
+
+    function loadFromLocalCache() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.inventory)) return parsed.inventory;
+        return [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveToLocalCache() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+      } catch (_) {
+        // Ignore localStorage quota/privacy failures
+      }
+    }
+
+    function loadRdeCache() {
+      try {
+        const raw = localStorage.getItem(RDE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
