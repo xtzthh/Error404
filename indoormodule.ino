@@ -98,3 +98,62 @@ String checkHumidity(float h){
   else if(h <= 80) return "WARNING";
   else return "DANGER";
 }
+
+String checkNH3(int v){
+  if(v <= 5) return "SAFE";
+  else if(v <= 15) return "WARNING";
+  else return "DANGER";
+}
+
+String checkCO2(int v){
+  if(v <= 1500) return "SAFE";
+  else if(v <= 3000) return "WARNING";
+  else return "DANGER";
+}
+
+/************************************************************
+                    SENSOR READING FUNCTION
+************************************************************/
+void readSensors(){
+
+  temperature = dht.readTemperature();
+  humidity = dht.readHumidity();
+
+  if(isnan(temperature) || isnan(humidity)){
+    temperature = 0;
+    humidity = 0;
+  }
+
+  fireStatus = (digitalRead(FIRE_SENSOR_PIN)==LOW)?1:0;
+  vibrationStatus = (digitalRead(SW420_PIN)==HIGH)?1:0;
+
+  nh3Value = analogRead(MQ137_PIN);
+  co2Value = analogRead(MG811_PIN);
+
+  tempStatus = checkTemperature(temperature);
+  humStatus  = checkHumidity(humidity);
+  nh3Status  = checkNH3(nh3Value);
+  co2Status  = checkCO2(co2Value);
+
+  evaluateOverallStatus();
+}
+
+/************************************************************
+                OVERALL DECISION LOGIC
+************************************************************/
+void evaluateOverallStatus(){
+
+  if(fireStatus == 1){
+    overallStatus = "DANGER";
+  }
+  else if(tempStatus=="DANGER" || humStatus=="DANGER" || 
+          nh3Status=="DANGER" || co2Status=="DANGER"){
+    overallStatus = "DANGER";
+  }
+  else if(tempStatus=="WARNING" || humStatus=="WARNING" || 
+          nh3Status=="WARNING" || co2Status=="WARNING"){
+    overallStatus = "WARNING";
+  }
+  else{
+    overallStatus = "SAFE";
+  }
