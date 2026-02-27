@@ -578,3 +578,65 @@
       }
       return best;
     }
+    function persistRdeDecisions() {
+      const now = new Date();
+      const live = loadLiveBlockSnapshot();
+      const decisions = {};
+      const blockTwin = {};
+      
+      // MOCK_BASE_VALUES for Hackathon Demo (representing historical system impact)
+      let totalKgSaved = 1240; 
+      let totalLossPrevented = 48500; 
+      let lotsRescued = 8; 
+
+      inventory.forEach((item) => {
+        if (item.sold) return;
+        const expiryDate = new Date(item.stored_at);
+        expiryDate.setMonth(expiryDate.getMonth() + Number(item.shelf_months || 0));
+        const daysLeft = daysBetween(now, expiryDate);
+        const telemetry = String(item.location || '').toUpperCase() === 'BLOCK_05' ? live : null;
+        const evalResult = evaluateBlockRisk(daysLeft, telemetry, item.name);
+        const spoilageRisk = spoilageRiskFromEval(evalResult.level);
+        const expiry = expiryUrgency(daysLeft);
+        const marketSignalInfo = getCropSignalDetails(item.name);
+        const marketSignal = marketSignalInfo.score;
+        const marketPick = bestMarketFor(item, marketSignal);
+        const travelPenalty = clamp100((marketPick?.travelHours || 2) * 14);
+
+        const score = clamp100(
+          0.40 * spoilageRisk +
+          0.25 * expiry +
+          0.20 * marketSignal +
+          0.15 * travelPenalty
+        );
+
+        const action = getDispatchAction(score);
+        const qtyKg = qtyToKg(item);
+        const pricePerKg = getBasePricePerKg(item.name);
+        const lotValueInr = qtyKg * pricePerKg;
+        const spoilageFrac = spoilageRisk / 100;
+        const holdDecayFactor = (action === 'DISPATCH_NOW' ? 0.42 : action === 'DISPATCH_TODAY' ? 0.30 : 0.18);
+        const potentialLossInr = lotValueInr * spoilageFrac * holdDecayFactor;
+        const travelImpact = clamp100((marketPick?.travelHours || 2) * 10) / 100;
+        const expectedRecoveryInr = potentialLossInr * (1 - travelImpact * 0.35);
+        const blockHealthScore = Math.max(1, computeHealthScore(daysLeft) - (evalResult.level === 'risk' ? 35 : evalResult.level === 'warning' ? 15 : 0));
+
+        d
+        };
+
+        if (action === 'DISPATCH_NOW' || action === 'DISPATCH_TODAY') {
+          totalKgSaved += qtyKg * (spoilageFrac * 0.55);
+          totalLossPrevented += expectedRecoveryInr;
+          lotsRescued += 1;
+        }
+
+        const block = String(item.location || '').toUpperCase();
+        if (!blockTwin[block] || blockTwin[block].health_score > blockHealthScore) {
+          blockTwin[block] = {
+            health_score: Number(blockHealthScore.toFixed(1)),
+            risk_level: evalResult.level.toUpperCase(),
+            reasons: evalResult.reasons,
+            live_snapshot: telemetry || null
+          };
+        }
+      });
