@@ -206,3 +206,61 @@
       if (daysLeft <= 90) return 82;
       return 94;
     }
+    const CROP_PROFILES = {
+      RICE: { tempWarn: 33, tempRisk: 36, humWarn: 78, humRisk: 86, co2Warn: 900, co2Risk: 1200 },
+      WHEAT: { tempWarn: 30, tempRisk: 34, humWarn: 70, humRisk: 80, co2Warn: 900, co2Risk: 1200 },
+      MAIZE: { tempWarn: 32, tempRisk: 36, humWarn: 75, humRisk: 84, co2Warn: 900, co2Risk: 1200 },
+      CORN: { tempWarn: 32, tempRisk: 36, humWarn: 75, humRisk: 84, co2Warn: 900, co2Risk: 1200 },
+      SOYBEAN: { tempWarn: 30, tempRisk: 34, humWarn: 72, humRisk: 80, co2Warn: 900, co2Risk: 1200 },
+      COTTON: { tempWarn: 31, tempRisk: 35, humWarn: 72, humRisk: 82, co2Warn: 900, co2Risk: 1200 },
+      DEFAULT: { tempWarn: 32, tempRisk: 36, humWarn: 75, humRisk: 85, co2Warn: 900, co2Risk: 1200 }
+    };
+
+    function getCropProfile(name) {
+      const upper = String(name || '').toUpperCase();
+      for (const key of Object.keys(CROP_PROFILES)) {
+        if (key !== 'DEFAULT' && upper.includes(key)) return CROP_PROFILES[key];
+      }
+      return CROP_PROFILES.DEFAULT;
+    }
+
+    function loadLiveBlockSnapshot() {
+      try {
+        const raw = localStorage.getItem(LIVE_BLOCK_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function fmt(v, suffix) {
+      return Number.isFinite(Number(v)) ? `${Number(v).toFixed(1)}${suffix}` : '--';
+    }
+
+    function evaluateBlockRisk(daysLeft, snapshot, cropName) {
+      const reasons = [];
+      let level = 'safe';
+
+      if (daysLeft < 0) {
+        level = 'risk';
+        reasons.push('Lot already expired');
+      } else if (daysLeft <= 7) {
+        level = 'warning';
+        reasons.push(`Low shelf life (${daysLeft} day${daysLeft === 1 ? '' : 's'})`);
+      }
+
+      const profile = getCropProfile(cropName);
+      const t = Number(snapshot?.temperature_c);
+      const h = Number(snapshot?.humidity_pct);
+      const c = Number(snapshot?.co2_ppm);
+
+      const setRisk = (msg) => {
+        level = 'risk';
+        reasons.push(msg);
+      };
+      const setWarn = (msg) => {
+        if (level !== 'risk') level = 'warning';
+        reasons.push(msg);
+      };
