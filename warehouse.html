@@ -325,3 +325,41 @@
           grid.appendChild(node);
           continue;
         }
+        occupied += 1;
+        const expiryDate = new Date(row.stored_at);
+        expiryDate.setMonth(expiryDate.getMonth() + Number(row.shelf_months || 0));
+        const daysLeft = daysBetween(new Date(), expiryDate);
+        const evalResult = evaluateBlockRisk(daysLeft, live, row.name);
+        const status = evalResult.level;
+        const health = Math.max(1, computeHealthScore(daysLeft) - (status === 'risk' ? 35 : status === 'warning' ? 15 : 0));
+        if (status === 'warning') warningCount += 1;
+        if (status === 'risk') riskCount += 1;
+
+        node.className = `warehouse-block ${status} ${isLiveBlock ? 'live-pulse' : ''}`;
+        node.innerHTML = `
+          <div class="block-id">B${i.toString().padStart(2, '0')}</div>
+          <div class="block-status ${status}">${status.toUpperCase()}</div>
+          <div class="block-tooltip">
+            <div class="military-tag" style="border-bottom:1px solid rgba(0,255,136,0.1); margin-bottom:8px; padding-bottom:4px;">SECTOR_B${i.toString().padStart(2,'0')}${isLiveBlock ? '_LIVE' : ''}</div>
+            <div style="display:flex; justify-content:space-between;"><span>ASSET:</span> <span style="color:var(--neon-green);">${row.name || 'UNKNOWN'}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>QTY:</span> <span style="color:var(--neon-green);">${row.qty || 0} ${row.unit || ''}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>EXPIRY:</span> <span style="color:var(--neon-green);">${formatDate(expiryDate)}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>DAYS_LEFT:</span> <span style="color:${daysLeft < 10 ? '#ff4444' : (daysLeft < 30 ? '#ff9f1a' : 'var(--neon-green)')};">${daysLeft}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>TEMP:</span> <span style="color:var(--neon-green);">${fmt(live?.temperature_c, 'C')}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>HUMIDITY:</span> <span style="color:var(--neon-green);">${fmt(live?.humidity_pct, '%')}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>NH3:</span> <span style="color:var(--neon-green);">${fmt(live?.nh3_ppm, ' ppm')}</span></div>
+            <div style="display:flex; justify-content:space-between;"><span>CO2:</span> <span style="color:var(--neon-green);">${fmt(live?.co2_ppm, ' ppm')}</span></div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px; font-weight:bold;"><span>HEALTH_SCORE:</span> <span style="color:var(--neon-green);">${health}/100</span></div>
+            <div style="margin-top:8px; border-top:1px solid rgba(0,255,136,0.05); padding-top:4px; font-size:9px; color:var(--text-muted); font-style:italic;">
+              ${evalResult.reasons.join(' | ')}
+            </div>
+          </div>
+        `;
+        grid.appendChild(node);
+      }
+
+      document.getElementById('occupiedCount').textContent = String(occupied);
+      document.getElementById('vacantCount').textContent = String(9 - occupied);
+      document.getElementById('nearExpiryCount').textContent = String(warningCount);
+      document.getElementById('expiredCount').textContent = String(riskCount);
+    }
