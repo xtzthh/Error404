@@ -1066,5 +1066,230 @@
       const rec = getDispatchRecommendation(item, farmerLocation, transportMode);
       const rdeCache = loadRdeCache();
       const rde = rdeCache[item.id] || null;
+const econ = getBestProfitableMarket(item, farmerLocation, transportMode, rde);
+      const travelAdjust = Math.max(0.55, 1 - (rec.travelHours / 20));
+      const adjustedRecovery = rde ? (Number(rde.recovery_if_dispatched_now_inr || 0) * travelAdjust) : 0;
+      const holdValue = rde ? Math.max(0, Number(rde.lot_value_inr || 0) - Number(rde.potential_loss_inr || 0)) : 0;
+      const nowValue = rde ? Number(rde.lot_value_inr || 0) : 0;
+
+      const priorityClass = rec.priority === 'DISPATCH_NOW' ? 'critical' : (rec.priority === 'HOLD' ? 'dispatch-val' : 'warn');
+
+      const box = document.getElementById('dispatchResultBox');
+      box.innerHTML = `
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">RDE_SCORE</span> <span class="dispatch-val ${rde?.rde_score < 70 ? 'warn' : 'dispatch-val'}">${rde ? rde.rde_score : '--'}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">RECOMMENDED_ACTION</span> <span class="dispatch-val ${priorityClass}">${rde?.action || 'PENDING'}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">DEST_FARMER</span> <span class="dispatch-val">${rec.farmerLabel || farmerLocation}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">TRAVEL_DISTANCE</span> <span class="dispatch-val">${rec.distanceKm} KM</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">EST_TRAVEL_TIME</span> <span class="dispatch-val">${rec.etaLabel}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">PROFITABLE_MARKET</span> <span class="dispatch-val">${econ.bestMarket}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">LOGISTICS_COST_EST</span> <span class="dispatch-val warn">₹${Number(econ.bestLogisticsCost || 0).toLocaleString('en-IN')}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">EST_NET_FARMER_PAYOUT</span> <span class="dispatch-val">₹${Number(econ.bestNetPayout || 0).toLocaleString('en-IN')}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">GAIN_VS_NEAREST_MARKET</span> <span class="dispatch-val ${econ.gainVsNearest > 0 ? 'dispatch-val' : 'warn'}">₹${Number(econ.gainVsNearest || 0).toLocaleString('en-IN')}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">MODEL_CONFIDENCE</span> <span class="dispatch-val">${rde?.market_model_confidence ? ⁠ ${Math.round(Number(rde.market_model_confidence) * 100)}% ⁠ : '--'}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">SHELF_LIFE_LEFT</span> <span class="dispatch-val ${rec.daysLeft < 7 ? 'critical' : (rec.daysLeft < 20 ? 'warn' : 'dispatch-val')}">${rec.daysLeft} DAY(S)</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">DISPATCH_PRIORITY</span> <span class="dispatch-val ${priorityClass}">${rec.priority}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">WINDOW_WINDOW</span> <span class="dispatch-val">${rec.windowText}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">LOT_GROSS_VALUE</span> <span class="dispatch-val">₹${nowValue.toLocaleString('en-IN')}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">POTENTIAL_SPOILAGE_LOSS</span> <span class="dispatch-val critical">₹${Number(rde?.potential_loss_inr || 0).toLocaleString('en-IN')}</span></div>
+        <div class="dispatch-line"><span class="military-tag" style="font-size:8px;">DISPATCH_RECOVERY</span> <span class="dispatch-val">₹${Math.max(0, adjustedRecovery).toFixed(0).toLocaleString('en-IN')}</span></div>
+        <div class="dispatch-line" style="border-top:1px solid var(--cyber-border); margin-top:8px; padding-top:8px;">
+           <span class="military-tag" style="font-size:8px; color:var(--neon-green);">NET_LOSS_PREVENTED</span> 
+           <span class="dispatch-val" style="font-size:14px;">₹${Math.max(0, adjustedRecovery - Math.max(0, nowValue - holdValue - adjustedRecovery)).toFixed(0).toLocaleString('en-IN')}</span>
+        </div>
+        <div class="dispatch-explain">
+           ${rde?.reason || 'Open warehouse view once to generate engine output.'}
+        </div>
+      `;
+    }
+
+    window.openDispatchMenu = (id) => {
+      dispatchItemId = id || selectedDispatchItemId;
+      populateDispatchLotOptions();
+      if (!dispatchItemId) {
+        alert('NO_STORED_LOTS_FOUND');
+        return;
+      }
+      const item = inventory.find(it => it.id === dispatchItemId);
+      if (!item) return;
+      updateDispatchLotTitle();
+      document.getElementById('dispatchSheet').classList.add('open');
+      document.getElementById('dispatchResultBox').innerHTML = '<div style="text-align:center; opacity:0.5; font-size:9px;">SELECT PARAMETERS & PRESS SUBMIT</div>';
+      refreshNearestMarketHint();
+      
+      // Disable confirm until submit is clicked
+      document.getElementById('dispatchConfirmBtn').disabled = true;
+      document.getElementById('dispatchConfirmBtn').classList.remove('active');
+    };
+
+    // Market Telemetry
+    async function fetchMarketRates() {
+      const container = document.getElementById('marketRatesContainer');
+      const demoData = [
+        { name: 'WHEAT', price: 2450, unit: 'QUINTAL', change: '+1.5%' },
+        { name: 'RICE', price: 3200, unit: 'QUINTAL', change: '-2.1%' },
+        { name: 'CORN', price: 1850, unit: 'QUINTAL', change: '+0.8%' },
+        { name: 'SOYBEAN', price: 4600, unit: 'QUINTAL', change: '+4.5%' }
+      ];
+
+      container.innerHTML = demoData.map(crop => {
+        const color = crop.change.startsWith('+') ? 'var(--neon-green)' : '#ef4444';
+        const inStorage = inventory.some(it => !it.sold && it.name.includes(crop.name));
+        
+        return `
+          <div class="crop-card-hud" style="${inStorage ? 'border-color: var(--neon-green); background: rgba(0,255,136,0.05);' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div class="military-tag" style="font-size:9px;">${crop.name}</div>
+                ${inStorage ? '<div class="badge-hud ok" style="font-size:7px; padding:2px 4px;">IN_STOCK</div>' : ''}
+            </div>
+            <div style="font-size:18px; font-weight:900; color:var(--neon-green);">₹${crop.price}</div>
+            <div class="military-tag" style="font-size:8px; opacity:0.5;">/${crop.unit}</div>
+            <div style="color:${color}; font-size:10px; margin-top:5px; font-weight:900;">${crop.change}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modal Handlers
+    const blockModal = document.getElementById('blockSelectionModal');
+    let selectedBlock = null;
+
+    document.getElementById('selectBlockBtn').onclick = () => {
+      blockModal.style.display = 'flex';
+      renderBlockSelection();
+    };
+
+    function renderBlockSelection() {
+      const grid = document.getElementById('blockSelectionGrid');
+      grid.innerHTML = '';
+      for (let i = 1; i <= 9; i++) {
+        const name = ⁠ BLOCK_${i.toString().padStart(2, '0')} ⁠;
+        const isOcc = inventory.some(it => it.location === name && !it.sold);
+        const block = document.createElement('div');
+        block.className = ⁠ storage-block-hud ${isOcc ? 'occupied' : ''} ⁠;
+        block.innerHTML = ⁠ <div class="block-id-hud">B${i.toString().padStart(2,'0')}</div><div class="block-crop-hud" style="font-size:9px;">${isOcc ? 'OCCUPIED' : 'VACANT'}</div> ⁠;
+        if (!isOcc) {
+          block.onclick = () => {
+            document.querySelectorAll('#blockSelectionGrid .storage-block-hud').forEach(b => b.style.borderColor = '');
+            block.style.borderColor = 'var(--neon-green)';
+            selectedBlock = name;
+            document.getElementById('confirmBlockSelection').disabled = false;
+          };
+        }
+        grid.appendChild(block);
+      }
+    }
+
+    document.getElementById('confirmBlockSelection').onclick = () => {
+      document.getElementById('cropLoc').value = selectedBlock;
+      document.getElementById('selectBlockBtn').innerHTML = selectedBlock;
+      document.getElementById('selectBlockBtn').classList.add('active');
+      blockModal.style.display = 'none';
+    };
+
+    document.getElementById('autoAssignBtn').onclick = () => {
+      for (let i = 1; i <= 9; i++) {
+        const name = ⁠ BLOCK_${i.toString().padStart(2, '0')} ⁠;
+        if (!inventory.some(it => it.location === name && !it.sold)) {
+          selectedBlock = name;
+          document.getElementById('confirmBlockSelection').click();
+          return;
+        }
+      }
+      alert('ERR: NO_VACANT_SECTORS');
+    };
+
+    document.getElementById('closeBlockModal').onclick = document.getElementById('cancelBlockSelection').onclick = () => blockModal.style.display = 'none';
+
+    // JSON Handlers
+    document.getElementById('exportBtn').onclick = () => {
+      const blob = new Blob([JSON.stringify({ inventory }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = ⁠ AGRISHIELD_DUMP_${new Date().getTime()}.json ⁠;
+      a.click();
+    };
+
+    document.getElementById('importBtn').onclick = () => document.getElementById('importModal').style.display = 'flex';
+    document.getElementById('cancelImport').onclick = () => document.getElementById('importModal').style.display = 'none';
+    document.getElementById('doImport').onclick = async () => {
+      await load();
+      try {
+        const j = JSON.parse(document.getElementById('importArea').value);
+        if (j.inventory) {
+          inventory = j.inventory;
+          await save();
+          document.getElementById('importModal').style.display = 'none';
+        }
+      } catch (e) { alert('ERR: DATA_INJECTION_FAILED'); }
+    };
+
+    document.getElementById('clearAllBtn').onclick = async () => {
+      await load();
+      if (confirm('CRITICAL_SYSTEM_WIPE?')) { inventory = []; await save(); }
+    };
+    
+    document.getElementById('closeDispatchSheet').onclick = () => {
+      document.getElementById('dispatchSheet').classList.remove('open');
+      dispatchItemId = null;
+    };
+    
+    document.getElementById('dispatchTopBtn').onclick = () => openDispatchMenu();
+    
+    document.getElementById('dispatchLotSelect').onchange = (e) => {
+      dispatchItemId = e.target.value;
+      updateDispatchLotTitle();
+      // Reset submit/confirm state on lot change
+      document.getElementById('dispatchConfirmBtn').disabled = true;
+      document.getElementById('dispatchConfirmBtn').classList.remove('active');
+    };
+    
+    const dispatchFarmerLocationEl = document.getElementById('dispatchFarmerLocation');
+    const nearestHintEl = document.getElementById('dispatchNearestMarketHint');
+    function refreshNearestMarketHint() {
+      if (!dispatchFarmerLocationEl || !nearestHintEl) return;
+      const rec = getNearestMarketForFarmer(dispatchFarmerLocationEl.value);
+      if (!Number.isFinite(rec.distanceKm) || rec.nearestMarket === '--') {
+        nearestHintEl.textContent = ⁠ AUTO_NEAREST_MARKET: UNKNOWN_CITY (try: PUNE, MUMBAI, AHMEDABAD, SURAT, DELHI...) ⁠;
+        return;
+      }
+      nearestHintEl.textContent = rec.approximate
+        ? ⁠ AUTO_NEAREST_MARKET: ${rec.nearestMarket} (~${rec.distanceKm} KM, APPROX) ⁠
+        : ⁠ AUTO_NEAREST_MARKET: ${rec.nearestMarket} (${rec.distanceKm} KM) ⁠;
+    }
+    dispatchFarmerLocationEl.oninput = () => {
+      refreshNearestMarketHint();
+      document.getElementById('dispatchConfirmBtn').disabled = true;
+      document.getElementById('dispatchConfirmBtn').classList.remove('active');
+    };
+    document.getElementById('dispatchTransportMode').onchange = () => {
+       document.getElementById('dispatchConfirmBtn').disabled = true;
+       document.getElementById('dispatchConfirmBtn').classList.remove('active');
+    };
+
+    function generateDispatchBillPdf(payload) {
+      try {
+        const jsPdfLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+        if (!jsPdfLib) return;
+
+        const doc = new jsPdfLib({ unit: 'mm', format: 'a4' });
+        const pageW = 210;
+        const m = 12;
+        const right = pageW - m;
+        const money = (v) => ⁠ INR ${Number(v || 0).toLocaleString('en-IN')} ⁠;
+        const line = () => doc.line(m, y, right, y);
+        let y = 14;
+
+        // Header
+        doc.setFillColor(16, 185, 129);
+        doc.rect(m, y - 6, pageW - m * 2, 14, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('AGRISHIELD LOGISTICS INVOICE', m + 3, y + 3);
+        doc.setFontSize(10);
+        doc.text(⁠ Invoice No: ${payload.billId} ⁠, right - 48, y);
+        doc.text(⁠ Date: ${new Date().toLocaleDateString()} ⁠, right - 48, y + 5);
+        doc.setTextColor(0, 0, 0);
+        y += 16;
 
 
