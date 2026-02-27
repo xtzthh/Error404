@@ -309,3 +309,23 @@ void setup(){
   modem.waitForNetwork();
   modem.gprsConnect("www","","");
 }
+
+/************************************************************
+                    MAIN LOOP
+************************************************************/
+void loop(){
+
+  if(millis() - lastSensorRead >= SENSOR_INTERVAL){
+    lastSensorRead = millis();
+    readSensors();
+    updateDisplay();
+  }
+
+  if(millis() - lastCloud >= CLOUD_INTERVAL){
+    lastCloud = millis();
+    sendToThingSpeak();
+  }
+
+  sendSMS();
+  checkNetwork();
+}
