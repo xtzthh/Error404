@@ -621,7 +621,25 @@
         const expectedRecoveryInr = potentialLossInr * (1 - travelImpact * 0.35);
         const blockHealthScore = Math.max(1, computeHealthScore(daysLeft) - (evalResult.level === 'risk' ? 35 : evalResult.level === 'warning' ? 15 : 0));
 
-        
+        decisions[item.id] = {
+          rde_score: Number(score.toFixed(1)),
+          spoilage_risk: spoilageRisk,
+          expiry_urgency: expiry,
+          market_signal: marketSignal,
+          travel_penalty: Number(travelPenalty.toFixed(1)),
+          action,
+          dispatch_window: getDispatchWindow(action),
+          best_market: marketPick?.market || 'VADODARA_MANDI',
+          route_score: Number((marketPick?.routeScore || 0).toFixed(1)),
+          travel_hours: Number((marketPick?.travelHours || 0).toFixed(1)),
+          lot_value_inr: Number(lotValueInr.toFixed(0)),
+          potential_loss_inr: Number(potentialLossInr.toFixed(0)),
+          recovery_if_dispatched_now_inr: Number(expectedRecoveryInr.toFixed(0)),
+          block_health_score: Number(blockHealthScore.toFixed(1)),
+          market_model_confidence: marketSignalInfo.confidence,
+          reason: `${evalResult.reasons.join(' | ')} | ${marketSignalInfo.reason}`,
+          generated_at: new Date().toISOString()
+        };
 
         if (action === 'DISPATCH_NOW' || action === 'DISPATCH_TODAY') {
           totalKgSaved += qtyKg * (spoilageFrac * 0.55);
