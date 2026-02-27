@@ -1,6 +1,6 @@
 <!-- Team Name Error 404
   Project - AgriVault 
-  Last Edited By Yash Patil
+  Edited By Yash Patil
 
 -->
 
@@ -72,4 +72,32 @@
   @keyframes demo-alert-pulse {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-3px); }
+  }
+
+
+  background: rgba(5, 7, 10, 0.95);
+    color: var(--neon-green);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 0 18px rgba(0, 255, 136, 0.18);
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  #indoorDemoToast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #indoorDemoToast.alert {
+    border-color: var(--error-red);
+    color: var(--error-red);
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.25);
+  }
+  #indoorDemoToast.success {
+    border-color: var(--neon-green);
+    color: var(--neon-green);
   }
