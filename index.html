@@ -904,3 +904,83 @@ if (clearBtn) {
     location.reload();
   };
 }
+
+// Download stream button: export both charts as one image
+const downloadBtn = document.getElementById('downloadPNG');
+if (downloadBtn) {
+  downloadBtn.onclick = () => {
+    const tempCanvas = document.getElementById('indoorTempChart');
+    const humCanvas = document.getElementById('indoorHumChart');
+    if (!tempCanvas || !humCanvas) {
+      alert('STREAM_EXPORT_FAILED: CHART_NOT_READY');
+      return;
+    }
+    const width = Math.max(tempCanvas.width, humCanvas.width);
+    const height = tempCanvas.height + humCanvas.height + 20;
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = width;
+    exportCanvas.height = height;
+    const ctx = exportCanvas.getContext('2d');
+    ctx.fillStyle = '#0b0f14';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(tempCanvas, 0, 0);
+    ctx.drawImage(humCanvas, 0, tempCanvas.height + 20);
+    const link = document.createElement('a');
+    link.download = `INDOOR_STREAM_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+    link.href = exportCanvas.toDataURL('image/png');
+    link.click();
+  };
+}
+
+// Test AI link button: verify OpenRouter API key works
+const testGrokBtn = document.getElementById('testGrokBtn');
+if (testGrokBtn) {
+  testGrokBtn.onclick = async () => {
+    const apiKey = "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";
+    testGrokBtn.disabled = true;
+    const originalText = testGrokBtn.innerText;
+    testGrokBtn.innerText = 'TESTING_LINK...';
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'AgriTech HUD'
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-r1',
+          messages: [{ role: 'user', content: 'Ping. Reply OK only.' }],
+          max_tokens: 8
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP_${res.status}`);
+      }
+      const data = await res.json();
+      const msg = data.choices?.[0]?.message?.content?.trim() || 'OK';
+      alert(`AI_LINK_OK: ${msg}`);
+    } catch (e) {
+      alert(`AI_LINK_FAILED: ${e.message || 'UNKNOWN_ERROR'}`);
+    } finally {
+      testGrokBtn.disabled = false;
+      testGrokBtn.innerText = originalText;
+    }
+  };
+}
+
+const indoorDemoBtn = document.getElementById('indoorDemoBtn');
+if (indoorDemoBtn) {
+  indoorDemoBtn.onclick = runIndoorDemo;
+}
+const indoorDemoBtnTop = document.getElementById('indoorDemoBtnTop');
+if (indoorDemoBtnTop) {
+  indoorDemoBtnTop.onclick = runIndoorDemo;
+}
+</script>
+<script src="theme.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>
