@@ -1,0 +1,75 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title>AgriShield — Storage Units</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <style>
+    :root {
+      --accent: var(--neon-green);
+    }
+    
+        body {
+            background-color: var(--cyber-black);
+            color: var(--text-primary);
+        }
+
+    .main-content {
+      padding: 30px;
+            position: relative;
+      z-index: 5; /* Ensure content is above mesh/scanlines */
+        }
+
+        .header-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        .grid-layout-storage {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 30px;
+        }
+
+        .storage-grid-hud {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+      background: rgba(0, 255, 136, 0.03); /* HUD-themed background */
+            border: 1px solid var(--cyber-border);
+            padding: 20px;
+      backdrop-filter: blur(5px);
+    }
+
+    [data-theme="light"] .storage-grid-hud {
+      background: rgba(0, 255, 136, 0.05); /* Lighter version for light mode */
+        }
+
+        .storage-block-hud {
+            aspect-ratio: 1;
+            border: 1px solid var(--cyber-border);
+      background: var(--cyber-card-bg); /* Use themed background instead of hardcoded grey */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+    [data-theme="light"] .storage-block-hud {
+      background: rgba(255, 255, 255, 0.6);
+        }
+
+        .storage-block-hud:hover {
+            border-color: var(--neon-green);
+            background: rgba(0, 255, 136, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
