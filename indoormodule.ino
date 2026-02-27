@@ -196,3 +196,51 @@ void updateDisplay(){
 
   display.print("CO2: ");
   display.println(co2Value);
+
+  display.print("NH3: ");
+  display.println(nh3Value);
+
+  display.print("Fire: ");
+  display.println(fireStatus?"YES":"NO");
+
+  display.print("Vent: ");
+  display.println(ventilationON?"ON":"OFF");
+
+  display.print("Status: ");
+  display.println(overallStatus);
+
+  display.display();
+}
+
+/************************************************************
+                SMS GENERATION
+************************************************************/
+String generateSMS(){
+
+  String sms = "SMART AGRIVAULT\n";
+  sms += "Temp:" + String(temperature) + "C\n";
+  sms += "Hum:" + String(humidity) + "%\n";
+  sms += "CO2:" + String(co2Value) + "\n";
+  sms += "NH3:" + String(nh3Value) + "\n";
+  sms += "Fire:" + String(fireStatus?"YES":"NO") + "\n";
+  sms += "Vib:" + String(vibrationStatus?"YES":"NO") + "\n";
+  sms += "Vent:" + String(ventilationON?"ON":"OFF") + "\n";
+  sms += "Status:" + overallStatus;
+
+  return sms;
+}
+
+/************************************************************
+                SEND SMS FUNCTION
+************************************************************/
+void sendSMS(){
+
+  if(millis() - lastSMS >= SMS_INTERVAL){
+
+    lastSMS = millis();
+
+    String message = generateSMS();
+
+    modem.sendSMS(SMS_NUMBER, message);
+  }
+}
