@@ -376,3 +376,66 @@ function showIndoorDemoToast(message, type) {
     toast.classList.remove('show');
   }, 2600);
 }
+function clearIndoorDemoAlert() {
+  var tempCard = document.getElementById('tempCard');
+  var humCard = document.getElementById('humCard');
+  var soilCard = document.getElementById('soilCard');
+  var airCard = document.getElementById('airCard');
+  if (tempCard) tempCard.classList.remove('demo-alert-card');
+  if (humCard) humCard.classList.remove('demo-alert-card');
+  if (soilCard) soilCard.classList.remove('demo-gas-card');
+  if (airCard) airCard.classList.remove('demo-gas-card');
+}
+
+function stabilizeIndoorValues(targets) {
+  var tempEl = document.getElementById('cardTemp');
+  var humEl = document.getElementById('cardHum');
+  var soilEl = document.getElementById('cardSoil');
+  var airEl = document.getElementById('cardAir');
+  if (!tempEl || !humEl || !soilEl || !airEl) return;
+
+  const parseNum = (text, fallback) => {
+    const n = parseFloat((text || '').toString());
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const start = {
+    temp: parseNum(tempEl.innerText, 34),
+    hum: parseNum(humEl.innerText, 70),
+    nh3: parseNum(soilEl.innerText, 40),
+    co2: parseNum(airEl.innerText, 560)
+  };
+  const end = {
+    temp: Number.isFinite(targets.temp) ? targets.temp : 29.8,
+    hum: Number.isFinite(targets.hum) ? targets.hum : 57.5,
+    nh3: Number.isFinite(targets.nh3) ? targets.nh3 : 24.0,
+    co2: Number.isFinite(targets.co2) ? targets.co2 : 520.0
+  };
+
+  if (indoorStabilizeTimer) {
+    clearInterval(indoorStabilizeTimer);
+    indoorStabilizeTimer = null;
+  }
+
+  let step = 0;
+  const total = 12;
+  indoorStabilizeTimer = setInterval(function () {
+    step += 1;
+    const p = step / total;
+    const temp = start.temp + (end.temp - start.temp) * p;
+    const hum = start.hum + (end.hum - start.hum) * p;
+    const nh3 = start.nh3 + (end.nh3 - start.nh3) * p;
+    const co2 = start.co2 + (end.co2 - start.co2) * p;
+
+    tempEl.innerText = temp.toFixed(1) + ' °C';
+    humEl.innerText = hum.toFixed(1) + ' %';
+    soilEl.innerText = nh3.toFixed(1) + ' ppm';
+    airEl.innerText = co2.toFixed(1) + ' ppm';
+    co2DisplayPpm = co2;
+
+    if (step >= total) {
+      clearInterval(indoorStabilizeTimer);
+      indoorStabilizeTimer = null;
+    }
+  }, 100);
+}
