@@ -157,3 +157,42 @@ void evaluateOverallStatus(){
   else{
     overallStatus = "SAFE";
   }
+
+  controlVentilation();
+}
+
+/************************************************************
+                VENTILATION CONTROL
+************************************************************/
+void controlVentilation(){
+
+  if(co2Status!="SAFE" || nh3Status!="SAFE"){
+    ventilationON = true;
+    digitalWrite(VENT_RELAY_PIN, HIGH);
+  }
+  else{
+    ventilationON = false;
+    digitalWrite(VENT_RELAY_PIN, LOW);
+  }
+}
+
+/************************************************************
+                OLED DISPLAY FUNCTION
+************************************************************/
+void updateDisplay(){
+
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.setTextSize(1);
+  display.println("SMART AGRIVAULT");
+
+  display.print("Temp: ");
+  display.print(temperature);
+  display.println(" C");
+
+  display.print("Hum: ");
+  display.print(humidity);
+  display.println(" %");
+
+  display.print("CO2: ");
+  display.println(co2Value);
