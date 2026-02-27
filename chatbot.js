@@ -104,3 +104,79 @@
         const code = (m ? m[1] : 'en').toLowerCase();
         return code.startsWith('hi') ? 'hi' : 'en';
       };
+      const tryAgriParam = async () => {
+        try {
+          const st = await fetch('/model-status');
+          if (!st.ok) return null;
+          const sjson = await st.json();
+          if (!(sjson.agriparam && sjson.agriparam.enabled && sjson.agriparam.deps_installed)) return null;
+
+          const context = `CURRENT_SECTOR: ${pageContext}\nTELEMETRY_DATA: ${dashboardState}\nINSTRUCTIONS: Be brief (max 6 lines). Use simple actionable steps for Indian conditions.`;
+          const body = {
+            query: text,
+            context,
+            lang: getLang(),
+            max_new_tokens: 240
+          };
+
+          const r = await fetch('/agri-advice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok || j.error) return null;
+          return j.text || null;
+        } catch (_) {
+          return null;
+        }
+      };
+
+      const localReply = await tryAgriParam();
+      if (localReply) {
+        appendMessage('AGRIASSIST', localReply);
+        return;
+      }
+
+      const prompt = `You are a helpful agriculture assistant.
+CURRENT_SECTOR: ${pageContext}
+TELEMETRY_DATA: ${dashboardState}
+USER_QUERY: ${text}
+
+INSTRUCTIONS:
+- Respond in a clear, friendly tone.
+- Use simple language.
+- Be brief (max 5 lines).
+- Avoid military or command-style language.`;
+
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'AgriTech HUD Chatbot'
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-r1',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 300
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP_${res.status}`);
+      }
+      const data = await res.json();
+      const response = data.choices?.[0]?.message?.content?.trim() || 'Sorry, I could not get a response.';
+      appendMessage('AGRIASSIST', response);
+    } catch (e) {
+      appendMessage('SYSTEM', 'Sorry, the assistant is offline right now.');
+    } finally {
+      loader.style.display = 'none';
+    }
+  };
+
+  sendChatBtn.onclick = sendChat;
+  chatInput.onkeydown = (e) => { if(e.key === 'Enter') sendChat(); };
+})();
