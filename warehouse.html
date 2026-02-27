@@ -35,3 +35,38 @@
       transition: all 0.25s ease;
       cursor: default;
     }
+
+    .warehouse-block:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 16px rgba(0, 255, 136, 0.12);
+    }
+    .warehouse-block.vacant { border-color: var(--cyber-border); }
+    .warehouse-block.safe {
+      border-color: var(--neon-green);
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.12);
+    }
+    .warehouse-block.warning {
+      border-color: #ff9f1a;
+      box-shadow: 0 0 14px rgba(255, 159, 26, 0.18);
+    }
+    .warehouse-block.risk {
+      border-color: #ff4444;
+      box-shadow: 0 0 14px rgba(255, 68, 68, 0.2);
+    }
+    .warehouse-block.live-pulse::after {
+      content: "LIVE";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--neon-green);
+      color: var(--cyber-black);
+      font-size: 8px;
+      font-weight: 900;
+      padding: 2px 5px;
+      border-radius: 2px;
+      animation: live-blink 1.5s infinite;
+    }
+    @keyframes live-blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.95); }
+    }
