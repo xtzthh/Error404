@@ -402,3 +402,73 @@
       persistRdeDecisions();
       renderWarehouseGrid();
     }
+    function clamp100(v) {
+      return Math.max(0, Math.min(100, v));
+    }
+
+    function expiryUrgency(daysLeft) {
+      if (daysLeft <= 2) return 100;
+      if (daysLeft <= 7) return 80;
+      if (daysLeft <= 15) return 60;
+      if (daysLeft <= 30) return 35;
+      return 10;
+    }
+
+    // Trained from producer-prices_ind.csv (FAOSTAT India, annual LCU/tonne).
+    // These are lightweight model parameters so RDE can run fully offline.
+    const MARKET_SIGNAL_MODEL = {
+      RICE: {
+        latest_year: 2008,
+        intercept: -1635792.088757,
+        slope_per_year: 821.07929,
+        signal_score: 80.2,
+        confidence: 0.95,
+        trend_annual_pct: 10.72,
+        volatility_pct: 21.189
+      },
+      WHEAT: {
+        latest_year: 2008,
+        intercept: -848361.91317,
+        slope_per_year: 427.393007,
+        signal_score: 81.2,
+        confidence: 0.95,
+        trend_annual_pct: 6.295,
+        volatility_pct: 4.862
+      },
+      MAIZE: {
+        latest_year: 2008,
+        intercept: -637215.576331,
+        slope_per_year: 321.072189,
+        signal_score: 76.5,
+        confidence: 0.95,
+        trend_annual_pct: 7.242,
+        volatility_pct: 11.64
+      },
+      SOYBEAN: {
+        latest_year: 2008,
+        intercept: -850063.034545,
+        slope_per_year: 429.250909,
+        signal_score: 74.6,
+        confidence: 0.95,
+        trend_annual_pct: 5.746,
+        volatility_pct: 8.15
+      },
+      COTTON: {
+        latest_year: 2008,
+        intercept: -1610461.333136,
+        slope_per_year: 815.268935,
+        signal_score: 58.7,
+        confidence: 0.914,
+        trend_annual_pct: 5.151,
+        volatility_pct: 22.57
+      },
+      DEFAULT: {
+        latest_year: 2008,
+        intercept: 0,
+        slope_per_year: 0,
+        signal_score: 74.2,
+        confidence: 0.65,
+        trend_annual_pct: 0,
+        volatility_pct: 0
+      }
+    };
