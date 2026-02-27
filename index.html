@@ -376,3 +376,55 @@ function showIndoorDemoToast(message, type) {
     toast.classList.remove('show');
   }, 2600);
 }
+setTimeout(function () {
+    indoorDemoRunning = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('active');
+      btn.innerText = 'RUN_INDOOR_DEMO';
+    }
+    if (topBtn) {
+      topBtn.disabled = false;
+      topBtn.classList.remove('active');
+      topBtn.innerText = 'RUN_DEMO';
+    }
+    if (indoorStabilizeTimer) {
+      clearInterval(indoorStabilizeTimer);
+      indoorStabilizeTimer = null;
+    }
+    performAggressiveFetch();
+  }, 5600);
+}
+
+function getSmoothedCo2Ppm(rawValue) {
+  const minPpm = 300;
+  const maxPpm = 700;
+  const stepLimit = 18; // max change per update to avoid sudden drops/spikes
+  const targetProvided = Number.isFinite(rawValue) && rawValue >= 0;
+
+  if (targetProvided) {
+    const boundedTarget = Math.max(minPpm, Math.min(maxPpm, rawValue));
+    const delta = boundedTarget - co2DisplayPpm;
+    const step = Math.max(-stepLimit, Math.min(stepLimit, delta));
+    co2DisplayPpm += step;
+  } else {
+    // Fallback random-walk when ThingSpeak CO2 is missing
+    const jitter = (Math.random() * 8) - 4;
+    co2DisplayPpm += (co2DriftDir * 6) + jitter;
+  }
+
+  
+  }
+
+  return co2DisplayPpm;
+}
+
+function getMaxPoints(range) {
+  switch (range) {
+    case '1h': return 6;
+    case '6h': return 36;
+    case 'week': return 168;
+    case '24h':
+    default: return 144;
+  }
+}
