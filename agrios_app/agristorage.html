@@ -1291,5 +1291,217 @@ const econ = getBestProfitableMarket(item, farmerLocation, transportMode, rde);
         doc.text(⁠ Date: ${new Date().toLocaleDateString()} ⁠, right - 48, y + 5);
         doc.setTextColor(0, 0, 0);
         y += 16;
+ // Party details
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('Billed By', m, y);
+        doc.text('Billed To (Farmer)', 110, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text('AgriShield Storage Unit', m, y);
+        doc.text(String(payload.farmerDestination || '--'), 110, y);
+        y += 5;
+        doc.text(⁠ Source Block: ${payload.sourceBlock || '--'} ⁠, m, y);
+        doc.text(⁠ Market: ${payload.selectedMarket || '--'} ⁠, 110, y);
+        y += 5;
+        doc.text(⁠ Transport: ${payload.transportMode || '--'} ⁠, m, y);
+        doc.text(⁠ ETA: ${payload.eta || '--'} | Distance: ${payload.distanceKm || '--'} KM ⁠, 110, y);
+        y += 5;
+        line();
+        y += 6;
 
+        // Line item table
+        const xDesc = m + 2;
+        const xQty = 120;
+        const xRate = 145;
+        const xAmt = 176;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Description', xDesc, y);
+        doc.text('Qty', xQty, y);
+        doc.text('Rate', xRate, y);
+        doc.text('Amount', xAmt, y);
+        y += 3;
+        line();
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(payload.lotName || 'Crop Lot Dispatch'), xDesc, y);
+        doc.text(String(payload.lotQty || '--'), xQty, y);
+        const rate = Number(payload.grossValue || 0) > 0 ? Number(payload.grossValue || 0) : 0;
+        doc.text(money(rate), xRate, y);
+        doc.text(money(payload.grossValue), xAmt, y);
+        y += 7;
+        line();
+        y += 8;
+
+        // Summary block
+        const sX = 120;
+        const addS = (k, v, bold) => {
+          doc.setFont('helvetica', bold ? 'bold' : 'normal');
+          doc.text(k, sX, y);
+          doc.text(v, right - 2, y, { align: 'right' });
+          y += 6;
+        };
+        addS('Gross Value', money(payload.grossValue), false);
+        addS('Logistics + Handling', ⁠ - ${money(payload.logisticsCost)} ⁠, false);
+        addS('Gain vs Nearest Market', money(payload.gainVsNearest), false);
+        addS('Net Farmer Payout', money(payload.netPayout), true);
+        y += 2;
+        line();
+        y += 7;
+
+        // RDE + compliance
+        doc.setFont('helvetica', 'bold');
+        doc.text('Dispatch Intelligence Summary', m, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.text(⁠ Priority: ${payload.priority || '--'} | Window: ${payload.windowText || '--'} | Model Confidence: ${payload.modelConfidence || '--'} ⁠, m, y);
+        y += 5;
+        const wrapped = doc.splitTextToSize(⁠ Reason: ${String(payload.explain || '--')} ⁠, pageW - m * 2);
+        doc.text(wrapped, m, y);
+        y += Math.min(28, wrapped.length * 4 + 2);
+
+        // Footer/sign
+        y = Math.min(268, y + 10);
+        doc.line(right - 58, y, right - 8, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Authorized Signature', right - 58, y + 5);
+        doc.setFontSize(8);
+        doc.text('Generated digitally by AgriShield Dispatch Planner', m, 286);
+
+        doc.save(⁠ AGRISHIELD_DISPATCH_BILL_${payload.billId}.pdf ⁠);
+      } catch (_) {
+        // PDF generation failure should not block dispatch.
+      }
+    }
+    
+    document.getElementById('dispatchSubmitBtn').onclick = async () => {
+      const loader = document.getElementById('dispatchLoader');
+      const submitBtn = document.getElementById('dispatchSubmitBtn');
+      const analysisText = loader.querySelector('.military-tag');
+      const resultBox = document.getElementById('dispatchResultBox');
+      
+      if (!dispatchItemId) {
+        alert('SELECT_A_LOT_FIRST');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      resultBox.classList.add('loading');
+      loader.classList.add('show');
+      
+      for(let msg of ANALYSIS_MESSAGES) {
+        analysisText.textContent = msg;
+        await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+      }
+      
+      renderDispatchPreview();
+      loader.classList.remove('show');
+      resultBox.classList.remove('loading');
+      submitBtn.disabled = false;
+      
+      // Enable confirm button after calculation
+      const confirmBtn = document.getElementById('dispatchConfirmBtn');
+      confirmBtn.disabled = false;
+      confirmBtn.classList.add('active');
+    };
+    window.addEventListener('storage', (event) => {
+      if (event.key === RDE_KEY && dispatchItemId) {
+        renderDispatchPreview();
+      }
+    });
+    document.getElementById('dispatchConfirmBtn').onclick = async () => {
+      await load();
+      if (!dispatchItemId) return;
+      const item = inventory.find(it => it.id === dispatchItemId);
+      if (!item) return;
+      const farmerLocation = document.getElementById('dispatchFarmerLocation').value;
+      const transportMode = document.getElementById('dispatchTransportMode').value;
+      const rec = getDispatchRecommendation(item, farmerLocation, transportMode);
+      const rde = loadRdeCache()[item.id] || null;
+      const econ = getBestProfitableMarket(item, farmerLocation, transportMode, rde);
+
+      const confirmBtn = document.getElementById('dispatchConfirmBtn');
+      const originalText = confirmBtn.textContent;
+      
+      if (!confirm('EXECUTE_DISPATCH_PROTOCOL_FOR_' + item.name + '?')) return;
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'EXECUTING...';
+      confirmBtn.classList.add('active');
+
+      // Final short animation for "execution"
+      const loader = document.getElementById('dispatchLoader');
+      const analysisText = loader.querySelector('.military-tag');
+      analysisText.textContent = 'INITIATING_LOGISTICS_LINK...';
+      loader.classList.add('show');
+      
+      await new Promise(r => setTimeout(r, 800));
+      analysisText.textContent = 'GENERATING_E-WAY_BILL...';
+      await new Promise(r => setTimeout(r, 600));
+
+      // Actually perform the dispatch (mark as sold)
+      item.sold = true;
+      item.sold_at = new Date().toISOString().slice(0, 10);
+      item.dispatched_to = document.getElementById('dispatchFarmerLocation').value;
+      item.dispatched_market = econ.bestMarket;
+      item.dispatched_via = document.getElementById('dispatchTransportMode').value;
+      
+      await save(); // Persist to shared backend + local fallback
+
+      const billId = ⁠ BILL-${Date.now().toString().slice(-8)} ⁠;
+      generateDispatchBillPdf({
+        billId,
+        lotName: item.name || '--',
+        lotQty: ⁠ ${item.qty || 0} ${item.unit || 'kg'} ⁠,
+        sourceBlock: item.location || '--',
+        farmerDestination: farmerLocation || '--',
+        transportMode: transportMode || '--',
+        selectedMarket: econ.bestMarket || '--',
+        distanceKm: Number(rec.distanceKm || 0).toFixed(1),
+        eta: rec.etaLabel || '--',
+        grossValue: Number(rde?.lot_value_inr || 0),
+        logisticsCost: Number(econ.bestLogisticsCost || 0),
+        netPayout: Number(econ.bestNetPayout || 0),
+        gainVsNearest: Number(econ.gainVsNearest || 0),
+        modelConfidence: rde?.market_model_confidence ? ⁠ ${Math.round(Number(rde.market_model_confidence) * 100)}% ⁠ : '--',
+        priority: rec.priority || '--',
+        windowText: rec.windowText || '--',
+        explain: rde?.reason || 'No explainability trace found.'
+      });
+
+      loader.classList.remove('show');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = originalText;
+      confirmBtn.classList.remove('active');
+
+      document.getElementById('dispatchSheet').classList.remove('open');
+      dispatchItemId = null;
+      selectedDispatchItemId = null;
+      
+      alert('DISPATCH_SUCCESS: Lot ' + item.name + ' has been moved to transit.');
+    };
+
+    // Scroll reveals
+    document.addEventListener('DOMContentLoaded', () => {
+        const revealEls = document.querySelectorAll('.reveal');
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+        }, { threshold: 0.1 });
+        revealEls.forEach(el => io.observe(el));
+    });
+
+    // Initialization
+    document.getElementById('search').oninput = renderAll;
+    document.getElementById('filterExp').onchange = renderAll;
+    refreshNearestMarketHint();
+    load();
+    setInterval(() => load(true), 8000);
+    fetchMarketRates();
+    setInterval(fetchMarketRates, 300000);
+  </script>
+  <script src="theme.js"></script>
+  <script src="chatbot.js"></script>
+</body>
+</html>
 
