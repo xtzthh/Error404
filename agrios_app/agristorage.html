@@ -328,3 +328,48 @@
           </div>
         </div>
       </div>
+
+      <div>
+          <div class="cyber-card">
+                    <div class="corner-br"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 class="military-tag">INVENTORY_MANIFEST</h3>
+              <div class="military-tag" style="font-size: 10px; color: var(--neon-green)">ACTIVE_SLOTS: <span id="totalSlots">0</span></div>
+          </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+              <input id="search" placeholder="SEARCH_BY_ASSET_OR_SECTOR..." style="flex: 1; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px;" />
+              <select id="filterExp" style="width: 150px; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px;">
+                <option value="all">ALL_STATUS</option>
+                <option value="ok">NOMINAL</option>
+                <option value="near">NEAR_EXPIRY</option>
+                <option value="expired">EXPIRED</option>
+                        </select>
+          </div>
+
+            <table id="inventoryTable" class="inventory-table-hud">
+                        <thead>
+                <tr><th>ASSET</th><th>QTY</th><th>SECTOR</th><th>STORED</th><th>EXPIRY</th><th>PROTOCOLS</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+        </div>
+
+          <div class="cyber-card" style="margin-top: 20px;">
+                    <div class="corner-br"></div>
+            <h3 class="military-tag">TELEMETRY_ANALYTICS</h3>
+            <div class="stats-grid-hud">
+              <div class="stat-card-hud">
+                <div class="stat-value-hud" id="totalCrops">0</div>
+                <div class="stat-label-hud">TOTAL_ASSETS</div>
+            </div>
+              <div class="stat-card-hud">
+                <div class="stat-value-hud" id="nearCount" style="color: #f59e0b;">0</div>
+                <div class="stat-label-hud">CRITICAL_EXPIRY</div>
+            </div>
+              <div class="stat-card-hud">
+                <div class="stat-value-hud" id="expiredCount" style="color: #ef4444;">0</div>
+                <div class="stat-label-hud">PURGE_REQUIRED</div>
+            </div>
+          </div>
+        </div>
