@@ -273,3 +273,41 @@
                   pathLength="100"
                   d="M29.76 18.72 c0 7.28-3.92 13.6-9.84 16.96 c-2.88 1.68-6.24 2.64-9.84 2.64 c-3.6 0-6.88-0.96-9.76-2.64 c0-7.28 3.92-13.52 9.84-16.96 c2.88-1.68 6.24-2.64 9.76-2.64 S26.88 17.04 29.76 18.72 c5.84 3.36 9.76 9.68 9.84 16.96 c-2.88 1.68-6.24 2.64-9.76 2.64 c-3.6 0-6.88-0.96-9.84-2.64 c-5.84-3.36-9.76-9.68-9.76-16.96 c0-7.28 3.92-13.6 9.76-16.96 C25.84 5.12 29.76 11.44 29.76 18.72z"
                 />
+
+                <path
+                  class="live"
+                  fill="none"
+                  stroke-width="4"
+                  stroke-dasharray="15, 85"
+                  stroke-dashoffset="0"
+                  stroke-linecap="round"
+                  pathLength="100"
+                  d="M29.76 18.72 c0 7.28-3.92 13.6-9.84 16.96 c-2.88 1.68-6.24 2.64-9.84 2.64 c-3.6 0-6.88-0.96-9.76-2.64 c0-7.28 3.92-13.52 9.84-16.96 c2.88-1.68 6.24-2.64 9.76-2.64 S26.88 17.04 29.76 18.72 c5.84 3.36 9.76 9.68 9.84 16.96 c-2.88 1.68-6.24 2.64-9.76 2.64 c-3.6 0-6.88-0.96-9.84-2.64 c-5.84-3.36-9.76-9.68-9.76-16.96 c0-7.28 3.92-13.6 9.76-16.96 C25.84 5.12 29.76 11.44 29.76 18.72z"
+                />
+              </svg>
+              <div class="military-tag" style="color: var(--neon-green); font-size: 10px;">SYNTHESIZING_NEURAL_RESPONSE...</div>
+            </div>
+          </div>
+            </div>
+        <div class="big-card cyber-card">
+          <div class="corner-br"></div>
+          <h3 class="military-tag" style="margin-bottom: 20px;">TEMPERATURE</h3>
+          <div style="display:flex; gap:10px; margin-bottom: 12px;">
+            <input id="weatherCityInput" placeholder="Search city..." style="flex:1; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; font-family: 'Roboto Mono', monospace;" />
+            <button class="btn-cyber" id="weatherSearchBtn">SEARCH_WEATHER</button>
+          </div>
+          <div id="farmLocation" class="data-mono glow-text" style="font-size: 18px; font-weight: bold; margin-bottom: 15px;"></div>
+          <div id="currentWeather" style="display: flex; align-items: center; gap: 15px; margin-bottom:20px;"><span id="weatherIcon" style="font-size: 40px;" class="spin-slow"></span><span id="weatherDescription" class="military-tag" style="font-size: 14px; color: var(--neon-green)"></span></div>
+          <div class="weather-card cyber-card" style="margin-bottom: 20px;"><div class="corner-br"></div><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;"><div><small class="military-tag">EXT_TEMP</small><div id="tempVal" class="value" style="font-size: 18px;">-- °C</div></div><div><small class="military-tag">EXT_HUM</small><div id="humVal" class="value" style="font-size: 18px;">-- %</div></div><div style="grid-column: span 2;"><small class="military-tag">WIND_VELOCITY</small><div id="windVal" class="value" style="font-size: 18px;">-- km/h</div></div></div></div>
+	          <div style="margin-top: 30px;"><h4 class="military-tag" style="font-size: 11px; margin-bottom: 15px;">SYSTEM_CONTROL</h4><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;"><button class="btn-cyber" id="refreshBtn" onclick="location.reload()">RE-SYNC</button><button class="btn-cyber" id="clearBtn">PURGE</button><button class="btn-cyber" id="indoorDemoBtn">RUN_INDOOR_DEMO</button><button class="btn-cyber" id="testGrokBtn">TEST_GEMINI_AI</button></div></div>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--cyber-border);"><h4 class="military-tag" style="font-size: 11px; margin-bottom: 15px;">DATA_VISUALIZATION</h4><div style="display:flex; flex-direction: column; gap: 12px;"><div><label class="military-tag" style="font-size: 9px; display: block; margin-bottom: 5px;">RENDER_MODE</label><select id="chartTypeSelect" class="btn-cyber" style="width:100%; appearance: none; "><option value="line">LINE_GRAPH</option><option value="bar">BAR_CHART</option><option value="area">AREA_SCAN</option></select></div><div><label class="military-tag" style="font-size: 9px; display: block; margin-bottom: 5px;">TIME_WINDOW</label><select id="timeRangeSelect" class="btn-cyber" style="width:100%; appearance: none; "><option value="1h">1_HOUR</option><option value="6h">6_HOURS</option><option value="24h" selected>24_HOURS</option><option value="week">1_WEEK</option></select></div></div></div>
+        </div>
+      </section>
+
+      <section id="indoorAlerts" class="metrics-row reveal">
+        <div class="metric cyber-card"><div class="corner-br"></div><div class="military-tag">Fire Alert</div><div style="font-size:24px; font-weight:900; margin-top:10px; color: var(--neon-green)" id="irFireStatus">--</div></div>
+        <div class="metric cyber-card"><div class="corner-br"></div><div class="military-tag">Rodent Alert</div><div style="font-size:24px; font-weight:900; margin-top:10px; color: var(--neon-green)" id="rodentStatus">--</div></div>
+      </section>
+    </main>
+  </div>
+</div>
