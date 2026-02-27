@@ -73,3 +73,78 @@
             background: rgba(0, 255, 136, 0.1);
       box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
         }
+
+        .storage-block-hud.occupied { border-color: var(--plasma-blue); background: rgba(59, 130, 246, 0.1); }
+        .storage-block-hud.near-expiry { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+        .storage-block-hud.expired { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+    .block-id-hud { font-size: 10px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+    .block-crop-hud { font-size: 11px; font-weight: 900; color: var(--text-primary); text-align: center; }
+
+    .block-tooltip-hud {
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--overlay-bg);
+      border: 1px solid var(--neon-green);
+      padding: 15px;
+      border-radius: 4px;
+      font-size: 11px;
+      width: 200px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+      z-index: 100;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    .storage-block-hud:hover .block-tooltip-hud {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+        .inventory-table-hud {
+            width: 100%;
+            border-collapse: separate;
+      border-spacing: 0 8px;
+        }
+
+        .inventory-table-hud th, .inventory-table-hud td {
+            padding: 15px;
+      background: var(--cyber-card-bg);
+      border-top: 1px solid var(--cyber-border);
+      border-bottom: 1px solid var(--cyber-border);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+      color: var(--text-primary);
+      backdrop-filter: blur(10px);
+    }
+
+    [data-theme="light"] .inventory-table-hud td {
+      background: rgba(255, 255, 255, 0.4) !important;
+      color: #0f172a !important;
+    }
+
+    [data-theme="light"] .inventory-table-hud tr:hover td {
+      background: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        .inventory-table-hud th {
+            background: rgba(0, 255, 136, 0.05);
+        color: var(--neon-green);
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+    [data-theme="light"] .inventory-table-hud th {
+      background: rgba(5, 150, 105, 0.1) !important;
+      color: #059669 !important;
+    }
+
+    .stats-grid-hud {
+            display: grid;
+      grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
