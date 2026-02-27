@@ -263,3 +263,68 @@
           <span id="selectedLotLabel" class="military-tag" style="font-size: 9px; color: var(--text-muted);">LOT: NONE</span>
       </div>
     </header>
+
+    <div id="notifications"></div>
+
+      <div class="grid-layout-storage">
+      <div>
+          <div class="cyber-card">
+                    <div class="corner-br"></div>
+                    <h3 class="military-tag">STOCK_MANIFEST_ENTRY</h3>
+            
+            <label class="military-tag" style="font-size: 9px; margin-top: 15px; display: block;">CROP_IDENTIFIER</label>
+            <input id="cropName" placeholder="e.g. RICE_INDICA" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;" />
+
+            <label class="military-tag" style="font-size: 9px; margin-top: 15px; display: block;">VARIETY_SPEC</label>
+            <input id="cropVar" placeholder="e.g. BASMATI_GRADE_A" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;" />
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+              <div style="flex: 1;">
+                <label class="military-tag" style="font-size: 9px; display: block;">QUANTITY</label>
+                <input id="cropQty" type="number" value="100" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;" />
+            </div>
+              <div style="width: 100px;">
+                <label class="military-tag" style="font-size: 9px; display: block;">UNIT</label>
+                <select id="cropUnit" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;">
+                  <option>kg</option><option>quintal</option><option>tonne</option><option>bags</option>
+                            </select>
+            </div>
+          </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px; align-items: flex-end;">
+              <div style="flex: 1;">
+                <label class="military-tag" style="font-size: 9px; display: block;">STORAGE_SECTOR</label>
+                <input id="cropLoc" placeholder="e.g. BLOCK_01" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;" />
+            </div>
+              <button class="btn-cyber" id="selectBlockBtn" style="height: 40px; white-space: nowrap;">SELECT_BLOCK</button>
+          </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+              <div style="flex: 1;">
+                <label class="military-tag" style="font-size: 9px; display: block;">TIMESTAMP_STORED</label>
+                <input id="cropDate" type="date" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;" />
+            </div>
+              <div style="width: 150px;">
+                <label class="military-tag" style="font-size: 9px; display: block;">SHELF_LIFE_MOS</label>
+                <input id="cropShelf" type="number" value="6" style="width: 100%; background: var(--input-bg); border: 1px solid var(--cyber-border); color: var(--text-primary); padding: 10px; margin-top: 5px;" />
+            </div>
+          </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+              <button class="btn-cyber active" id="addBtn" style="flex: 1; justify-content: center;">COMMIT_TO_STORAGE</button>
+              <button class="btn-cyber" id="clearForm" style="width: 100px; justify-content: center;">RESET</button>
+            </div>
+
+            <div style="margin-top: 25px; border-top: 1px solid var(--cyber-border); padding-top: 15px;">
+              <div class="military-tag" style="font-size: 9px; color: var(--text-muted); margin-bottom: 10px;">QUICK_PROTOCOLS</div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn-cyber" id="autoSuggestSell" style="flex: 1; font-size: 10px;">SUGGEST_LIQUIDATION</button>
+                <button class="btn-cyber" id="markExpiredBtn" style="flex: 1; font-size: 10px;">PURGE_EXPIRED</button>
+              </div>
+              <div class="small" style="margin-top: 12px; color: var(--text-muted); font-size: 10px;">
+                Block visualization is moved to the dedicated warehouse view.
+              </div>
+              <a href="warehouse.html" class="btn-cyber" style="margin-top: 10px; justify-content: center; width: 100%; display: flex;">OPEN_WAREHOUSE_VIEW</a>
+          </div>
+        </div>
+      </div>
