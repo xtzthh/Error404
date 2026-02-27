@@ -682,4 +682,370 @@
         sold: false,
         sold_at: null
       };
+      const exIdx = inventory.findIndex(it => it.location === obj.location && it.name === obj.name);
+      if (exIdx !== -1) {
+        inventory[exIdx].qty += obj.qty;
+        inventory[exIdx].stored_at = obj.stored_at;
+      } else {
+        inventory.push(obj);
+      }
+      await save(); 
+      clearForm();
+    };
+
+    function clearForm() {
+      ['cropName', 'cropVar', 'cropQty', 'cropLoc', 'cropDate', 'cropShelf'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el.type === 'date') el.value = '';
+        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+        else el.value = '';
+      });
+      document.getElementById('selectBlockBtn').innerHTML = 'SELECT_BLOCK';
+      document.getElementById('selectBlockBtn').classList.remove('active');
+    }
+
+    function renderAll() {
+      const tbody = document.querySelector('#inventoryTable tbody');
+      tbody.innerHTML = '';
+      const now = new Date();
+      let near = 0, expired = 0;
+      const search = document.getElementById('search').value.trim().toLowerCase();
+      const filter = document.getElementById('filterExp').value;
+      const nearSoon = [];
+
+      inventory.forEach(item => {
+        const expiryDate = new Date(item.stored_at);
+        expiryDate.setMonth(expiryDate.getMonth() + Number(item.shelf_months));
+        const days = daysBetween(now, expiryDate);
+        const status = item.sold ? 'sold' : (days < 0 ? 'expired' : (days <= 30 ? 'near' : 'ok'));
+        
+        if (status === 'near') { near++; if(!item.sold) nearSoon.push({item, days}); }
+        if (status === 'expired') expired++;
+
+        if (search && !(item.name + ' ' + item.location).toLowerCase().includes(search)) return;
+        if (filter !== 'all' && filter !== status) return;
+
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.dataset.itemId = item.id;
+        if (selectedDispatchItemId === item.id) tr.classList.add('inventory-row-selected');
+        tr.onclick = () => setSelectedDispatchItem(item.id);
+        const expiryStr = status === 'sold' ? ⁠ SOLD_${formatDate(item.sold_at)} ⁠ : formatDate(expiryDate);
+        tr.innerHTML = `
+          <td><strong>${item.name}</strong><div class="military-tag" style="font-size:8px;">${item.variety}</div></td>
+                        <td>${item.qty} ${item.unit}</td>
+                        <td>${item.location}</td>
+                        <td>${formatDate(item.stored_at)}</td>
+          <td>${expiryStr}</td>
+          <td style="display: flex; gap: 5px;">
+            <button class="btn-cyber" onclick="event.stopPropagation(); editItem('${item.id}')">EDIT</button>
+            <button class="btn-cyber" onclick="event.stopPropagation(); markSold('${item.id}')">LIQ</button>
+            <button class="btn-cyber" onclick="event.stopPropagation(); removeItem('${item.id}')" style="color:#ef4444;">DEL</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderAlertCard(nearSoon);
+      
+      document.getElementById('totalSlots').innerText = [...new Set(inventory.filter(i => !i.sold).map(i => i.location))].length;
+      document.getElementById('totalCrops').innerText = inventory.filter(i => !i.sold).length;
+      document.getElementById('nearCount').innerText = near;
+      document.getElementById('expiredCount').innerText = expired;
+
+      const activeItems = inventory.filter(i => !i.sold);
+      if (!selectedDispatchItemId || !activeItems.some(i => i.id === selectedDispatchItemId)) {
+        selectedDispatchItemId = activeItems[0]?.id || null;
+      }
+      highlightSelectedRow();
+      updateSelectedLotLabel();
+    }
+
+    function setSelectedDispatchItem(id) {
+      selectedDispatchItemId = id;
+      highlightSelectedRow();
+      updateSelectedLotLabel();
+    }
+
+    function highlightSelectedRow() {
+      const rows = document.querySelectorAll('#inventoryTable tbody tr');
+      rows.forEach((row) => {
+        row.classList.toggle('inventory-row-selected', row.dataset.itemId === selectedDispatchItemId);
+      });
+    }
+
+    function updateSelectedLotLabel() {
+      const label = document.getElementById('selectedLotLabel');
+      if (!label) return;
+      const item = inventory.find(i => i.id === selectedDispatchItemId && !i.sold);
+      label.textContent = item ? ⁠ LOT: ${item.name} @ ${item.location} ⁠ : 'LOT: NONE';
+    }
+
+    function renderAlertCard(nearSoon) {
+      const noti = document.getElementById('notifications');
+      noti.innerHTML = '';
+      if (nearSoon.length > 0) {
+        nearSoon.sort((a,b) => a.days - b.days).slice(0, 3).forEach(x => {
+          const el = document.createElement('div');
+          el.className = 'notif-hud';
+          el.innerHTML = ⁠ <strong>CRITICAL_ALERT:</strong> ${x.item.name} at ${x.item.location} expires in ${x.days} day(s). ⁠;
+          noti.appendChild(el);
+        });
+      }
+    }
+
+    function renderStorageMap() {
+      const map = document.getElementById('storageMap');
+      if (!map) return;
+      map.innerHTML = '';
+      for (let i = 1; i <= 9; i++) {
+        const blockName = ⁠ BLOCK_${i.toString().padStart(2, '0')} ⁠;
+        const blockCrops = inventory.filter(it => it.location === blockName && !it.sold);
+        const block = document.createElement('div');
+        block.className = 'storage-block-hud';
+        
+        if (blockCrops.length > 0) {
+          const crop = blockCrops[0];
+          const expiryDate = new Date(crop.stored_at);
+          expiryDate.setMonth(expiryDate.getMonth() + Number(crop.shelf_months));
+          const days = daysBetween(new Date(), expiryDate);
+          
+          if (days < 0) block.classList.add('expired');
+          else if (days <= 30) block.classList.add('near-expiry');
+          else block.classList.add('occupied');
+          
+          block.innerHTML = `
+            <div class="block-id-hud">B${i.toString().padStart(2,'0')}</div>
+            <div class="block-crop-hud">${crop.name}</div>
+            <div class="block-tooltip-hud">
+                <div class="military-tag" style="color:var(--neon-green); border-bottom:1px solid var(--cyber-border); margin-bottom:8px; padding-bottom:4px;">SECTOR_B${i.toString().padStart(2,'0')}</div>
+                <div>ASSET: ${crop.name}</div>
+                <div>QTY: ${crop.qty} ${crop.unit}</div>
+                <div>EXPIRY: ${formatDate(expiryDate)}</div>
+                <div style="margin-top:8px; font-weight:bold; color:${days < 0 ? '#ef4444' : (days <= 30 ? '#f59e0b' : 'var(--neon-green)')}">STATUS: ${days < 0 ? 'EXPIRED' : (days <= 30 ? 'NEAR_EXPIRY' : 'NOMINAL')}</div>
+            </div>
+          `;
+        } else {
+          block.innerHTML = `
+            <div class="block-id-hud">B${i.toString().padStart(2,'0')}</div>
+            <div class="block-crop-hud" style="opacity:0.2;">VACANT</div>
+            <div class="block-tooltip-hud">
+                <div class="military-tag" style="color:var(--text-muted); border-bottom:1px solid var(--cyber-border); margin-bottom:8px; padding-bottom:4px;">SECTOR_B${i.toString().padStart(2,'0')}</div>
+                <div>STATUS: VACANT</div>
+                <div style="margin-top:8px; opacity:0.5;">AWAITING_STOCK_ENTRY</div>
+            </div>
+          `;
+        }
+        map.appendChild(block);
+      }
+    }
+    
+    window.editItem = async (id) => {
+      await load();
+      const item = inventory.find(it => it.id === id);
+      if (!item) return;
+      document.getElementById('cropName').value = item.name;
+      document.getElementById('cropVar').value = item.variety;
+      document.getElementById('cropQty').value = item.qty;
+      document.getElementById('cropUnit').value = item.unit;
+      document.getElementById('cropLoc').value = item.location;
+      document.getElementById('cropDate').value = item.stored_at;
+      document.getElementById('cropShelf').value = item.shelf_months;
+      inventory = inventory.filter(it => it.id !== id);
+      await save();
+    };
+
+    window.markSold = async (id) => {
+      await load();
+      const item = inventory.find(it => it.id === id);
+      if (!item) return;
+      const q = prompt(⁠ ENTER_QTY_TO_LIQUIDATE [MAX:${item.qty}]: ⁠, item.qty);
+      if (q === null) return;
+      const val = parseFloat(q);
+      if (val >= item.qty) {
+        item.sold = true;
+        item.sold_at = new Date().toISOString().slice(0, 10);
+        item.qty = 0;
+      } else {
+        item.qty -= val;
+      }
+      await save();
+    };
+
+    window.removeItem = async (id) => {
+      await load();
+      if (confirm('PROTOCOL_PURGE_ASSET?')) {
+        inventory = inventory.filter(it => it.id !== id);
+        await save();
+      }
+    };
+
+    function normalizePlaceKey(value) {
+      return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9 ]/g, '');
+    }
+
+    function haversineKm(a, b) {
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const dLat = toRad(b.lat - a.lat);
+      const dLon = toRad(b.lon - a.lon);
+      const lat1 = toRad(a.lat);
+      const lat2 = toRad(b.lat);
+      const h = Math.sin(dLat / 2) * 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * 2;
+      return 2 * 6371 * Math.asin(Math.sqrt(h));
+    }
+
+    function resolveFarmerCoords(rawInput) {
+      const typed = normalizePlaceKey(rawInput);
+      if (!typed) return { key: 'VADODARA', label: 'VADODARA', coords: FARMER_LOCATION_COORDS.VADODARA, approximate: false };
+      if (FARMER_LOCATION_COORDS[typed]) return { key: typed, label: typed, coords: FARMER_LOCATION_COORDS[typed] };
+
+      const partialKey = Object.keys(FARMER_LOCATION_COORDS).find((k) => typed.includes(k) || k.includes(typed));
+      if (partialKey) return { key: partialKey, label: typed, coords: FARMER_LOCATION_COORDS[partialKey], approximate: false };
+
+      // Unknown location: don't invent a fake coordinate because it produces misleading distance.
+      return { key: 'UNKNOWN', label: typed, coords: null, approximate: true };
+    }
+
+    function getNearestMarketForFarmer(rawInput) {
+      const farmer = resolveFarmerCoords(rawInput);
+      if (!farmer.coords) {
+        return {
+          farmerLabel: farmer.label,
+          nearestMarket: '--',
+          distanceKm: null,
+          approximate: true
+        };
+      }
+      let best = null;
+      Object.entries(MARKET_COORDS).forEach(([marketName, marketCoords]) => {
+        const distance = haversineKm(farmer.coords, marketCoords);
+        if (!best || distance < best.distanceKm) best = { market: marketName, distanceKm: distance };
+      });
+      return {
+        farmerLabel: farmer.label,
+        nearestMarket: best?.market || 'VADODARA_MANDI',
+        distanceKm: best ? Number(best.distanceKm.toFixed(1)) : 80,
+        approximate: Boolean(farmer.approximate)
+      };
+    }
+
+    function qtyToKg(item) {
+      const q = Number(item?.qty || 0);
+      const unit = String(item?.unit || 'kg').toLowerCase();
+      if (!Number.isFinite(q) || q <= 0) return 0;
+      if (unit.includes('quintal')) return q * 100;
+      if (unit.includes('tonne') || unit.includes('ton')) return q * 1000;
+      if (unit.includes('bag')) return q * 50;
+      return q;
+    }
+
+    function estimateBasePricePerKg(item, rde) {
+      const qtyKg = qtyToKg(item);
+      const fromRde = qtyKg > 0 ? Number(rde?.lot_value_inr || 0) / qtyKg : 0;
+      if (Number.isFinite(fromRde) && fromRde > 1) return fromRde;
+      const n = String(item?.name || '').toUpperCase();
+      if (n.includes('RICE')) return 32;
+      if (n.includes('WHEAT')) return 24.5;
+      if (n.includes('MAIZE') || n.includes('CORN')) return 18.5;
+      if (n.includes('SOY')) return 46;
+      if (n.includes('COTTON')) return 72;
+      return 24;
+    }
+
+    function getBestProfitableMarket(item, farmerLocation, transportMode, rde) {
+      const farmer = resolveFarmerCoords(farmerLocation);
+      const qtyKg = qtyToKg(item);
+      const basePricePerKg = estimateBasePricePerKg(item, rde);
+      const kmCost = TRANSPORT_COST_PER_KM[transportMode] ?? 26;
+      const handlingCost = 250 + qtyKg * 0.12;
+
+      let best = null;
+      let nearest = null;
+      Object.entries(MARKET_COORDS).forEach(([marketName, marketCoords]) => {
+        const distanceKm = haversineKm(farmer.coords, marketCoords);
+        const grossValue = qtyKg * basePricePerKg * (MARKET_PRICE_MULTIPLIER[marketName] || 1);
+        const logisticsCost = handlingCost + distanceKm * kmCost;
+        const netPayout = grossValue - logisticsCost;
+        const row = {
+          marketName,
+          distanceKm,
+          grossValue,
+          logisticsCost,
+          netPayout
+        };
+        if (!best || row.netPayout > best.netPayout) best = row;
+        if (!nearest || row.distanceKm < nearest.distanceKm) nearest = row;
+      });
+
+      const gainVsNearest = best && nearest ? best.netPayout - nearest.netPayout : 0;
+      return {
+        bestMarket: best?.marketName || 'VADODARA_MANDI',
+        bestNetPayout: best ? Number(best.netPayout.toFixed(0)) : 0,
+        bestLogisticsCost: best ? Number(best.logisticsCost.toFixed(0)) : 0,
+        bestDistanceKm: best ? Number(best.distanceKm.toFixed(1)) : 0,
+        nearestMarket: nearest?.marketName || 'VADODARA_MANDI',
+        gainVsNearest: Number(gainVsNearest.toFixed(0))
+      };
+    }
+
+    function getDispatchRecommendation(item, farmerLocation, transportMode) {
+      const nearest = getNearestMarketForFarmer(farmerLocation);
+      const distanceKm = Number.isFinite(nearest.distanceKm) ? nearest.distanceKm : 80;
+      const speed = TRANSPORT_SPEED[transportMode] ?? 38;
+      const travelHours = distanceKm / speed + 0.6;
+
+      const expiryDate = new Date(item.stored_at);
+      expiryDate.setMonth(expiryDate.getMonth() + Number(item.shelf_months || 0));
+      const daysLeft = daysBetween(new Date(), expiryDate);
+
+      let priority = 'HOLD';
+      if (daysLeft <= 2 || travelHours > 6) priority = 'DISPATCH_NOW';
+      else if (daysLeft <= 7 || travelHours > 4) priority = 'DISPATCH_TODAY';
+      else if (daysLeft <= 15) priority = 'DISPATCH_24H';
+
+      const etaLabel = ⁠ ${travelHours.toFixed(1)} HRS ⁠;
+      const windowText =
+        priority === 'DISPATCH_NOW' ? 'WINDOW: < 6 HOURS' :
+        priority === 'DISPATCH_TODAY' ? 'WINDOW: TODAY' :
+        priority === 'DISPATCH_24H' ? 'WINDOW: < 24 HOURS' : 'WINDOW: FLEXIBLE';
+
+      return {
+        distanceKm,
+        travelHours,
+        priority,
+        etaLabel,
+        windowText,
+        daysLeft,
+        nearestMarket: nearest.nearestMarket,
+        farmerLabel: nearest.farmerLabel
+      };
+    }
+
+    function getStoredLots() {
+      return inventory.filter((it) => !it.sold && /^BLOCK_\d+/i.test(String(it.location || '')));
+    }
+
+    function populateDispatchLotOptions() {
+      const select = document.getElementById('dispatchLotSelect');
+      const lots = getStoredLots();
+      if (!select) return;
+      select.innerHTML = lots.map((it) => `
+        <option value="${it.id}">
+          ${it.name} | ${it.location} | ${it.qty} ${it.unit}
+        </option>
+      `).join('');
+      if (dispatchItemId && lots.some((x) => x.id === dispatchItemId)) {
+        select.value = dispatchItemId;
+      } else if (lots[0]) {
+        dispatchItemId = lots[0].id;
+        select.value = lots[0].id;
+      }
+      updateDispatchLotTitle();
+    }
+
+    function updateDispatchLotTitle() {
+      const title = document.getElementById('dispatchLotTitle');
+      const item = inventory.find(it => it.id === dispatchItemId);
+      title.textContent = item ? ⁠ ${item.name} @ ${item.location} ⁠ : 'SELECT STORED LOT';
+    }
 
