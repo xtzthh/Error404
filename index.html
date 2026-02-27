@@ -311,3 +311,52 @@
     </main>
   </div>
 </div>
+
+<div id="indoorDemoToast" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+
+<script>
+// Dashboard State
+ [
+  {
+    name: 'TEMP_HUMIDITY_EVENT',
+    focus: ['temp', 'hum'],
+    temp: 39.7,
+    hum: 92.8,
+    nh3: 22.0,
+    co2: 760,
+    success: true
+  },
+  {
+    name: 'TEMP_NH3_EVENT',
+    focus: ['temp', 'nh3'],
+    temp: 37.9,
+    hum: 58.4,
+    nh3: 82.4,
+    co2: 980,
+    success: false
+  },
+  {
+    name: 'NH3_HUMIDITY_CO2_EVENT',
+    focus: ['nh3', 'hum', 'co2'],
+    temp: 30.6,
+    hum: 88.1,
+    nh3: 74.3,
+    co2: 1860,
+    success: true
+  }
+];
+
+function showIndoorDemoToast(message, type) {
+  var toast = document.getElementById('indoorDemoToast');
+  if (!toast) return;
+  toast.className = '';
+  toast.textContent = message;
+  if (type) toast.classList.add(type);
+  toast.classList.add('show');
+  if (indoorDemoToastTimer) clearTimeout(indoorDemoToastTimer);
+  indoorDemoToastTimer = setTimeout(function () {
+    toast.classList.remove('show');
+  }, 2600);
+}
