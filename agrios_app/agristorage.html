@@ -231,3 +231,35 @@
       <div>
         <div class="brand"><div class="logo-square">AS</div> AGRITECH</div>
         <p class="military-tag" style="margin-top:10px; color: var(--neon-green)">[ STORAGE_LINK_ACTIVE ]</p>
+
+        <nav style="margin-top: 24px; display: flex; flex-direction: column; gap: 4px;">
+          <a href="landing.html" class="nav-item"><span>🏠</span> HOME_TERMINAL</a>
+          <a href="index.html" class="nav-item"><span class="glow-icon">📊</span> INDOOR_DASHBOARD</a>
+          <a href="agri-storage.html" class="nav-item active"><span>📦</span> STORAGE_UNITS</a>
+          <a href="warehouse.html" class="nav-item"><span>🏬</span> WAREHOUSE</a>
+        </nav>
+      </div>
+
+      <div class="cyber-card" style="padding: 15px;">
+        <div class="corner-br"></div>
+        <div class="military-tag" style="font-size: 9px; margin-bottom: 5px;">SYS_TELEMETRY</div>
+        <div class="small" style="font-size: 11px;">STATUS: LINKED<br>DATABASE: STORAGE_SYNC</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="header-hud cyber-card">
+            <div class="corner-br"></div>
+        <div class="brand">
+            <div class="logo-square">📦</div>
+            <h1 style="margin:0; font-size: 20px;">AGRISHIELD_STORAGE_UNIT</h1>
+        </div>
+        <div id="syncStatus" class="military-tag" style="font-size: 10px; color: #ef4444;">LINK_OFFLINE</div>
+        <div style="display: flex; gap: 10px; align-items:center;">
+                <button class="btn-cyber" id="importBtn">IMPORT_JSON</button>
+          <button class="btn-cyber" id="exportBtn">EXPORT_JSON</button>
+          <button class="btn-cyber active" id="dispatchTopBtn">DISPATCH</button>
+          <button class="btn-cyber" id="clearAllBtn" style="color: #ef4444;">WIPE_STORAGE</button>
+          <span id="selectedLotLabel" class="military-tag" style="font-size: 9px; color: var(--text-muted);">LOT: NONE</span>
+      </div>
+    </header>
