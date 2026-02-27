@@ -185,3 +185,24 @@
     </main>
   </div>
     
+  <script>
+    const STORAGE_KEY = 'agri_storage_app_v2_hud';
+    const LIVE_BLOCK_KEY = 'agri_live_block_b05';
+    const RDE_KEY = 'agri_rde_decisions_v1';
+    const RDE_KPI_KEY = 'agri_rde_kpis_v1';
+    const BLOCK_TWIN_KEY = 'agri_block_twin_v1';
+    const LIVE_CHANNEL_ID = '3214038';
+    const LIVE_READ_KEY = 'XIZY6ZXHB5VCKY2T';
+    let inventory = [];
+
+    const daysBetween = (a, b) => Math.ceil((b - a) / (1000 * 60 * 60 * 24));
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
+
+    function computeHealthScore(daysLeft) {
+      if (!Number.isFinite(daysLeft)) return 50;
+      if (daysLeft < 0) return 10;
+      if (daysLeft <= 15) return 35;
+      if (daysLeft <= 30) return 60;
+      if (daysLeft <= 90) return 82;
+      return 94;
+    }
