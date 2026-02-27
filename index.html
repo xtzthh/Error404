@@ -195,3 +195,39 @@
       <div class="cyber-card" style="padding: 15px;">
         <div class="corner-br"></div>
       
+        <div class="military-tag" style="font-size: 9px; margin-bottom: 5px;">SYS_TELEMETRY</div>
+        <div class="small" style="font-size: 11px;">NODE_ID: <span id="channelLabel" style="color: var(--neon-green)">3214038</span><br>BUILD: demo_v1.0<br>LATENCY: <span id="latencyVal">42ms</span></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar-hud cyber-card" style="padding: 10px 20px; border-radius: 0 0 4px 4px; margin-top: 10px; margin-bottom: 40px;">
+        <div class="corner-br"></div>
+        <div style="display:flex;align-items:center;gap:15px">
+          <span class="status-pulse"></span>
+          <span class="military-tag">COMMAND_CENTER</span>
+        </div>
+        <div style="display:flex; align-items:center; gap: 15px;">
+          <div id="langSwitch" class="cyber-card" style="padding: 5px 15px; border-radius: 20px; border-color: var(--neon-green); position: relative; top: auto; right: auto; z-index: auto; margin: 0;">
+            <span class="military-tag" style="font-size: 14px;">🌐</span>
+            <select id="langSelect" style="background:transparent; border:none; color:var(--neon-green); font-family:'Roboto Mono'; font-weight:bold; outline:none; cursor:pointer;">
+              <option value="en">EN</option>
+              <option value="hi">HI</option>
+              <option value="mr">MR</option>
+              <option value="ne">NE</option>
+            </select>
+          </div>
+	          <button class="btn-cyber" id="printBtn">EXPORT_DATA</button>
+	          <button class="btn-cyber btn-demo-top" id="indoorDemoBtnTop">RUN_DEMO</button>
+	          <button class="btn-cyber" onclick="logout()">LOGOUT</button>
+	        </div>
+	      </header>
+
+      <section class="grid-top reveal" id="topCards">
+        <div class="card cyber-card crosshair" id="tempCard">
+          <div class="corner-br"></div>
+          <div class="block-icon">🌡️</div>
+          <h4 class="military-tag">Temperature</h4>
+          <div class="value stat-value" id="cardTemp">-- °C</div>
+          <div class="military-tag" id="cardTempTime" style="font-size: 9px; margin-top: 5px;"></div>
+        </div>
