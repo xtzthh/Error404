@@ -1048,4 +1048,23 @@
       const item = inventory.find(it => it.id === dispatchItemId);
       title.textContent = item ? ⁠ ${item.name} @ ${item.location} ⁠ : 'SELECT STORED LOT';
     }
+    const ANALYSIS_MESSAGES = [
+      'FETCHING_BLOCKWISE_MICROCLIMATE_TELEMETRY...',
+      'EVALUATING_SPOILAGE_RISK_COEFFICIENT...',
+      'MAPPING_FARMER_LOCATION_DISTANCE...',
+      'CALCULATING_OPTIMAL_DISPATCH_WINDOW...',
+      'GENERATING_RDE_SCORE_FINAL_REPORT...'
+    ];
+
+    function renderDispatchPreview() {
+      if (!dispatchItemId) return;
+      const item = inventory.find(it => it.id === dispatchItemId);
+      if (!item) return;
+
+      const farmerLocation = document.getElementById('dispatchFarmerLocation').value;
+      const transportMode = document.getElementById('dispatchTransportMode').value;
+      const rec = getDispatchRecommendation(item, farmerLocation, transportMode);
+      const rdeCache = loadRdeCache();
+      const rde = rdeCache[item.id] || null;
+
 
