@@ -66,3 +66,35 @@ int fireStatus = 0;
 int vibrationStatus = 0;
 int nh3Value = 0;
 int co2Value = 0;
+
+String tempStatus = "SAFE";
+String humStatus = "SAFE";
+String nh3Status = "SAFE";
+String co2Status = "SAFE";
+String overallStatus = "SAFE";
+
+bool ventilationON = false;
+bool networkConnected = false;
+
+unsigned long lastSMS = 0;
+unsigned long lastCloud = 0;
+unsigned long lastSensorRead = 0;
+
+const unsigned long SMS_INTERVAL = 15000;
+const unsigned long CLOUD_INTERVAL = 15000;
+const unsigned long SENSOR_INTERVAL = 3000;
+
+/************************************************************
+                    STATUS CHECK FUNCTIONS
+************************************************************/
+String checkTemperature(float t){
+  if(t >= 15 && t <= 25) return "SAFE";
+  else if(t <= 30) return "WARNING";
+  else return "DANGER";
+}
+
+String checkHumidity(float h){
+  if(h <= 70) return "SAFE";
+  else if(h <= 80) return "WARNING";
+  else return "DANGER";
+}
