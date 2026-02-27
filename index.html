@@ -698,3 +698,289 @@ function updateHUDWithData(data) {
     source: 'indoor_stream'
   });
 }
+
+// THE AGGRESSIVE HEARTBEAT FIX (REPLACES MQTT IF IT FAILS)
+async function performAggressiveFetch() {
+  try {
+    console.log("📡 AGRI-OS: EXECUTING_SYNC...");
+    const res = await fetch(`https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${readKey}&results=1`);
+    if (res.ok) {
+    const json = await res.json();
+      if (json.feeds && json.feeds.length > 0) {
+        updateHUDWithData(json.feeds[0]);
+        console.log("✅ AGRI-OS: SYNC_COMPLETE");
+      }
+    }
+  } catch (e) { console.error("❌ AGRI-OS: SYNC_FAILED", e); }
+}
+
+async function updateWeather(city) {
+  try {
+    const API_KEY = '3RZRLWMFYCVRCPUMYT2R8ECFG';
+    const cityName = (city || weatherCity || "Vadodara").trim();
+    const encodedCity = encodeURIComponent(cityName);
+    const res = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${encodedCity}?unitGroup=metric&key=${API_KEY}&contentType=json`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    weatherData.temp = data.currentConditions.temp;
+    weatherData.humidity = data.currentConditions.humidity;
+    document.getElementById('farmLocation').innerText = data.resolvedAddress || cityName;
+    document.getElementById('tempVal').innerText = Math.round(weatherData.temp) + "°C";
+    document.getElementById('humVal').innerText = Math.round(weatherData.humidity) + "%";
+    document.getElementById('windVal').innerText = Math.round(data.currentConditions.windspeed * 3.6) + " km/h";
+  } catch (e) { console.error('Weather error', e); }
+}
+
+function initCharts(){
+  var ctxT = document.getElementById('indoorTempChart').getContext('2d');
+  var ctxH = document.getElementById('indoorHumChart').getContext('2d');
+  chartIndoorTemp = new Chart(ctxT, {
+    type: 'line',
+    data: {
+      labels: chartData.labels, 
+      datasets: [{
+        label: 'Temp',
+        data: chartData.indoorTemp,
+        borderColor: '#ff6b6b',
+        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+        fill: true 
+      }] 
+    },
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      animation: false
+    }
+  });
+  chartIndoorHum = new Chart(ctxH, {
+    type: 'line',
+    data: {
+      labels: chartData.labels, 
+      datasets: [{
+        label: 'Humidity', 
+        data: chartData.indoorHum, 
+        borderColor: '#1976d2',
+        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+        fill: true 
+      }] 
+    },
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      animation: false
+    }
+  });
+}
+
+function updateChartType(mode) {
+  const chartType = mode === 'bar' ? 'bar' : 'line';
+  const fill = mode === 'area';
+  const tempDataset = chartIndoorTemp?.data?.datasets?.[0];
+  const humDataset = chartIndoorHum?.data?.datasets?.[0];
+  if (chartIndoorTemp) {
+    chartIndoorTemp.config.type = chartType;
+    if (tempDataset) tempDataset.fill = fill;
+    chartIndoorTemp.update('none');
+  }
+  if (chartIndoorHum) {
+    chartIndoorHum.config.type = chartType;
+    if (humDataset) humDataset.fill = fill;
+    chartIndoorHum.update('none');
+  }
+}
+
+async function reloadHistoricalData() {
+  chartData.labels = [];
+  chartData.indoorTemp = [];
+  chartData.indoorHum = [];
+  const historicalRes = await fetch(`https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${readKey}&results=${maxPoints}`);
+  if (historicalRes.ok) {
+    const historicalJson = await historicalRes.json();
+    if (historicalJson.feeds && historicalJson.feeds.length > 0) {
+      const feeds = [...historicalJson.feeds].filter(f => f.created_at);
+      feeds.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      feeds.forEach(feed => {
+        const time = new Date(feed.created_at).toLocaleTimeString();
+        // Avoid duplicate labels that can cause visual jumps
+        if (chartData.labels.length === 0 || chartData.labels[chartData.labels.length - 1] !== time) {
+          chartData.labels.push(time);
+          chartData.indoorTemp.push(feed.field1 ? parseFloat(feed.field1) : null);
+          chartData.indoorHum.push(feed.field2 ? parseFloat(feed.field2) : null);
+        }
+      });
+      const last = historicalJson.feeds[historicalJson.feeds.length-1];
+      updateHUDWithData(last);
+    }
+  }
+  if (chartIndoorTemp) chartIndoorTemp.update('none');
+  if (chartIndoorHum) chartIndoorHum.update('none');
+}
+
+async function startApp() {
+  try {
+    document.getElementById('app').style.display = 'block';
+    
+    maxPoints = getMaxPoints(document.getElementById('timeRangeSelect')?.value || '24h');
+    await reloadHistoricalData();
+
+    const weatherInput = document.getElementById('weatherCityInput');
+    const weatherBtn = document.getElementById('weatherSearchBtn');
+    if (weatherInput) {
+      weatherInput.value = weatherCity;
+      weatherInput.onkeydown = (e) => {
+        if (e.key === 'Enter' && weatherBtn) weatherBtn.click();
+      };
+    }
+    if (weatherBtn) {
+      weatherBtn.onclick = () => {
+        const q = weatherInput ? weatherInput.value.trim() : '';
+        if (!q) return;
+        weatherCity = q;
+        localStorage.setItem('as_weather_city', weatherCity);
+        updateWeather(weatherCity);
+      };
+    }
+
+    const chartTypeSelect = document.getElementById('chartTypeSelect');
+    const timeRangeSelect = document.getElementById('timeRangeSelect');
+    if (chartTypeSelect) {
+      chartTypeSelect.onchange = () => updateChartType(chartTypeSelect.value);
+      updateChartType(chartTypeSelect.value);
+    }
+    if (timeRangeSelect) {
+      timeRangeSelect.onchange = async () => {
+        maxPoints = getMaxPoints(timeRangeSelect.value);
+        await reloadHistoricalData();
+      };
+    }
+
+    updateWeather(weatherCity).then(() => {
+        initCharts();
+      // START THE REFRESH-FREE LOOP (Every 15 Seconds)
+      setInterval(performAggressiveFetch, 15000);
+      performAggressiveFetch(); // Immediate sync
+    });
+    const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } });
+},{threshold:0.12});
+revealEls.forEach(el=>io.observe(el));
+    
+  } catch (e) { console.error('App initialization failed: ', e); }
+}
+
+function succeedLogin(user) {
+  document.getElementById('loginScreen').style.display = 'none';
+  localStorage.setItem('as_user_role', user);
+  startApp();
+}
+
+function doLogin() {
+  var u = document.getElementById('username').value.trim();
+  var p = document.getElementById('password').value.trim();
+  if (u === "judge" && p === "agri123") succeedLogin(u);
+  else alert('Invalid credentials');
+}
+
+function useGuest() { succeedLogin('guest'); }
+function logout() { localStorage.removeItem('as_user_role'); location.reload(); }
+
+window.addEventListener('load', () => {
+  if (localStorage.getItem('as_user_role')) {
+    document.getElementById('loginScreen').style.display = 'none';
+    startApp();
+  }
+});
+
+// Purge button: clear cached UI state and reload
+const clearBtn = document.getElementById('clearBtn');
+if (clearBtn) {
+  clearBtn.onclick = () => {
+    const ok = confirm('PURGE_CACHED_STATE? This clears local UI data.');
+    if (!ok) return;
+    localStorage.removeItem('as_weather_city');
+    localStorage.removeItem('as_user_role');
+    localStorage.removeItem('theme');
+    location.reload();
+  };
+}
+
+// Download stream button: export both charts as one image
+const downloadBtn = document.getElementById('downloadPNG');
+if (downloadBtn) {
+  downloadBtn.onclick = () => {
+    const tempCanvas = document.getElementById('indoorTempChart');
+    const humCanvas = document.getElementById('indoorHumChart');
+    if (!tempCanvas || !humCanvas) {
+      alert('STREAM_EXPORT_FAILED: CHART_NOT_READY');
+      return;
+    }
+    const width = Math.max(tempCanvas.width, humCanvas.width);
+    const height = tempCanvas.height + humCanvas.height + 20;
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = width;
+    exportCanvas.height = height;
+    const ctx = exportCanvas.getContext('2d');
+    ctx.fillStyle = '#0b0f14';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(tempCanvas, 0, 0);
+    ctx.drawImage(humCanvas, 0, tempCanvas.height + 20);
+    const link = document.createElement('a');
+    link.download = `INDOOR_STREAM_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+    link.href = exportCanvas.toDataURL('image/png');
+    link.click();
+  };
+}
+
+// Test AI link button: verify OpenRouter API key works
+const testGrokBtn = document.getElementById('testGrokBtn');
+if (testGrokBtn) {
+  testGrokBtn.onclick = async () => {
+    const apiKey = "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";
+    testGrokBtn.disabled = true;
+    const originalText = testGrokBtn.innerText;
+    testGrokBtn.innerText = 'TESTING_LINK...';
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'AgriTech HUD'
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-r1',
+          messages: [{ role: 'user', content: 'Ping. Reply OK only.' }],
+          max_tokens: 8
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP_${res.status}`);
+      }
+      const data = await res.json();
+      const msg = data.choices?.[0]?.message?.content?.trim() || 'OK';
+      alert(`AI_LINK_OK: ${msg}`);
+    } catch (e) {
+      alert(`AI_LINK_FAILED: ${e.message || 'UNKNOWN_ERROR'}`);
+    } finally {
+      testGrokBtn.disabled = false;
+      testGrokBtn.innerText = originalText;
+    }
+  };
+}
+
+const indoorDemoBtn = document.getElementById('indoorDemoBtn');
+if (indoorDemoBtn) {
+  indoorDemoBtn.onclick = runIndoorDemo;
+}
+const indoorDemoBtnTop = document.getElementById('indoorDemoBtnTop');
+if (indoorDemoBtnTop) {
+  indoorDemoBtnTop.onclick = runIndoorDemo;
+}
+</script>
+<script src="theme.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>
