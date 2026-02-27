@@ -705,3 +705,18 @@
         // Keep last known local telemetry if feed is unavailable.
       }
     }
+    document.getElementById('refreshWarehouseBtn').onclick = () => loadInventory();
+    window.addEventListener('storage', (event) => {
+      if (event.key === STORAGE_KEY || event.key === LIVE_BLOCK_KEY) {
+        loadInventory();
+      }
+    });
+    setInterval(() => loadInventory(), 8000);
+    setInterval(hydrateLiveBlockFromSensorFeed, 15000);
+    hydrateLiveBlockFromSensorFeed();
+    loadInventory();
+  </script>
+  <script src="theme.js"></script>
+  <script src="chatbot.js"></script>
+</body>
+</html>
