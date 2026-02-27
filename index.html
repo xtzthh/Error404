@@ -231,3 +231,45 @@
           <div class="value stat-value" id="cardTemp">-- °C</div>
           <div class="military-tag" id="cardTempTime" style="font-size: 9px; margin-top: 5px;"></div>
         </div>
+
+        <div class="card cyber-card" id="humCard">
+          <div class="corner-br"></div>
+          <div class="block-icon">💧</div>
+          <h4 class="military-tag">Humidity</h4>
+          <div class="value stat-value" id="cardHum">-- %</div>
+          <div class="military-tag" id="cardHumTime" style="font-size: 9px; margin-top: 5px;"></div>
+        </div>
+
+        <div class="card cyber-card" id="soilCard">
+          <div class="corner-br"></div>
+          <div class="block-icon">🧪</div>
+          <h4 class="military-tag" id="cardSoilLabel">AMMONIA_PPM</h4>
+          <div class="value stat-value" id="cardSoil">--</div>
+          <div class="military-tag" id="cardSoilTime" style="font-size: 9px; margin-top: 5px;"></div>
+        </div>
+
+        <div class="card cyber-card" id="airCard">
+          <div class="corner-br"></div>
+          <div class="block-icon">🌫️</div>
+          <h4 class="military-tag" id="cardAirLabel">CO2_DENSITY</h4>
+          <div class="value stat-value" id="cardAir">--</div>
+          <div class="military-tag" id="cardAirTime" style="font-size: 9px; margin-top: 5px;"></div>
+        </div>
+      </section>
+
+      <section class="content-row reveal">
+        <div class="big-card cyber-card" style="position: relative;">
+          <div class="corner-br"></div>
+          <h3 class="military-tag" style="margin-bottom: 20px;">TELEMETRY_STREAM</h3>
+          <div id="indoorCharts"><div class="chart-container"><canvas id="indoorTempChart"></canvas></div><div class="chart-container"><canvas id="indoorHumChart"></canvas></div></div>
+          <div style="display:flex;justify-content:flex-end;gap:10px"><button class="btn-cyber" id="toggleLive">PAUSE_LIVE</button><button class="btn-cyber" id="downloadPNG">DOWNLOAD_STREAM</button></div>
+          <div id="aiInlineLoader" class="ai-inline-loader">
+            <div class="ai-inline-card">
+              <svg class="ai-infinity" viewBox="-2 -2 44 44" aria-hidden="true">
+                <path
+                  class="track"
+                  fill="none"
+                  stroke-width="4"
+                  pathLength="100"
+                  d="M29.76 18.72 c0 7.28-3.92 13.6-9.84 16.96 c-2.88 1.68-6.24 2.64-9.84 2.64 c-3.6 0-6.88-0.96-9.76-2.64 c0-7.28 3.92-13.52 9.84-16.96 c2.88-1.68 6.24-2.64 9.76-2.64 S26.88 17.04 29.76 18.72 c5.84 3.36 9.76 9.68 9.84 16.96 c-2.88 1.68-6.24 2.64-9.76 2.64 c-3.6 0-6.88-0.96-9.84-2.64 c-5.84-3.36-9.76-9.68-9.76-16.96 c0-7.28 3.92-13.6 9.76-16.96 C25.84 5.12 29.76 11.44 29.76 18.72z"
+                />
