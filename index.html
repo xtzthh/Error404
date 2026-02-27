@@ -105,3 +105,44 @@
     border-color: var(--neon-green);
     color: var(--neon-green);
   }
+
+  <!-- Team Name Error 404
+  Project - AgriVault 
+  Edited By Shlok Kumar
+
+-->
+.ai-inline-loader {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(3px);
+    z-index: 5;
+  }
+  .ai-inline-card {
+    background: rgba(5, 7, 10, 0.92);
+    border: 1px solid var(--neon-green);
+    padding: 16px 22px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.12);
+  }
+  .ai-infinity {
+    width: 56px;
+    height: 56px;
+  }
+  .ai-infinity path.track {
+    stroke: rgba(0, 255, 136, 0.25);
+  }
+  .ai-infinity path.live {
+    stroke: var(--neon-green);
+    animation: infinity-loader-travel 1.2s linear infinite;
+  }
+  @keyframes infinity-loader-travel {
+    0% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -100; }
+  }
