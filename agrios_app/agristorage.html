@@ -532,3 +532,136 @@
         return {};
       }
     }
+
+    const FARMER_LOCATION_COORDS = {
+      VADODARA: { lat: 22.3072, lon: 73.1812 },
+      BARODA: { lat: 22.3072, lon: 73.1812 },
+      AHMEDABAD: { lat: 23.0225, lon: 72.5714 },
+      SURAT: { lat: 21.1702, lon: 72.8311 },
+      PUNE: { lat: 18.5204, lon: 73.8567 },
+      MUMBAI: { lat: 19.0760, lon: 72.8777 },
+      NASHIK: { lat: 19.9975, lon: 73.7898 },
+      NAGPUR: { lat: 21.1458, lon: 79.0882 },
+      DELHI: { lat: 28.6139, lon: 77.2090 },
+      BENGALURU: { lat: 12.9716, lon: 77.5946 },
+      HYDERABAD: { lat: 17.3850, lon: 78.4867 },
+      CHENNAI: { lat: 13.0827, lon: 80.2707 },
+      KOLKATA: { lat: 22.5726, lon: 88.3639 }
+    };
+
+    const MARKET_COORDS = {
+      VADODARA_MANDI: { lat: 22.3072, lon: 73.1812 },
+      AHMEDABAD_MANDI: { lat: 23.0225, lon: 72.5714 },
+      SURAT_MANDI: { lat: 21.1702, lon: 72.8311 },
+      PUNE_MANDI: { lat: 18.5204, lon: 73.8567 },
+      MUMBAI_MANDI: { lat: 19.0760, lon: 72.8777 },
+      NASHIK_MANDI: { lat: 19.9975, lon: 73.7898 },
+      NAGPUR_MANDI: { lat: 21.1458, lon: 79.0882 },
+      DELHI_AZADPUR_MANDI: { lat: 28.7041, lon: 77.1025 },
+      BENGALURU_MANDI: { lat: 12.9716, lon: 77.5946 },
+      HYDERABAD_MANDI: { lat: 17.3850, lon: 78.4867 },
+      CHENNAI_MANDI: { lat: 13.0827, lon: 80.2707 },
+      KOLKATA_MANDI: { lat: 22.5726, lon: 88.3639 }
+    };
+
+    const MARKET_PRICE_MULTIPLIER = {
+      VADODARA_MANDI: 1.00,
+      AHMEDABAD_MANDI: 1.06,
+      SURAT_MANDI: 0.98,
+      PUNE_MANDI: 1.03,
+      MUMBAI_MANDI: 1.08,
+      NASHIK_MANDI: 1.01,
+      NAGPUR_MANDI: 1.00,
+      DELHI_AZADPUR_MANDI: 1.07,
+      BENGALURU_MANDI: 1.05,
+      HYDERABAD_MANDI: 1.04,
+      CHENNAI_MANDI: 1.03,
+      KOLKATA_MANDI: 1.02
+    };
+
+    const TRANSPORT_COST_PER_KM = {
+      MINI_TRUCK: 22,
+      TRUCK_10T: 30,
+      REEFER: 38
+    };
+
+    const TRANSPORT_SPEED = {
+      MINI_TRUCK: 42,
+      TRUCK_10T: 36,
+      REEFER: 34
+    };
+
+    function setSyncStatus(text, color) {
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.textContent = text;
+      statusEl.style.color = color;
+    }
+
+    async function fetchServerInventory() {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 6000);
+      try {
+        const response = await fetch(STORAGE_API, { signal: ctrl.signal });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (_) {
+        return null;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    async function pushServerInventory() {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 7000);
+      try {
+        const response = await fetch(STORAGE_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(inventory),
+          signal: ctrl.signal
+        });
+        return response.ok;
+      } catch (_) {
+        return false;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    async function load(skipIfWriting = false) {
+      if (skipIfWriting && isWriteSyncInFlight) return;
+      const remote = await fetchServerInventory();
+      if (remote) {
+        const local = loadFromLocalCache();
+        if (remote.length === 0 && Array.isArray(local) && local.length > 0) {
+          inventory = local;
+          const migrated = await pushServerInventory();
+          setSyncStatus(migrated ? 'LIVE_SYNC_MIGRATED' : 'LOCAL_FALLBACK', migrated ? 'var(--neon-green)' : '#f59e0b');
+        } else {
+          inventory = remote;
+          setSyncStatus('LIVE_SYNC', 'var(--neon-green)');
+        }
+        saveToLocalCache();
+      } else {
+        inventory = loadFromLocalCache();
+        setSyncStatus('LOCAL_FALLBACK', '#f59e0b');
+      }
+      renderAll();
+    }
+
+    async function save() {
+      saveToLocalCache();
+      renderAll();
+      isWriteSyncInFlight = true;
+      const ok = await pushServerInventory();
+      isWriteSyncInFlight = false;
+      if (ok) {
+        setSyncStatus('LIVE_SYNC', 'var(--neon-green)');
+        await load(true);
+      } else {
+        setSyncStatus('WRITE_FAILED_LOCAL_ONLY', '#ef4444');
+      }
+    }
+
