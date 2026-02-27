@@ -472,3 +472,45 @@
         volatility_pct: 0
       }
     };
+    const MARKET_OPTIONS = [
+      { name: 'VADODARA_MANDI', basePrice: 1.0, demand: 72 },
+      { name: 'AHMEDABAD_MANDI', basePrice: 1.06, demand: 78 },
+      { name: 'SURAT_MANDI', basePrice: 0.98, demand: 65 }
+    ];
+
+    const BASE_PRICE_PER_KG = {
+      RICE: 32.0,
+      WHEAT: 24.5,
+      MAIZE: 18.5,
+      CORN: 18.5,
+      SOYBEAN: 46.0,
+      COTTON: 72.0,
+      DEFAULT: 24.0
+    };
+
+    function getCropSignalDetails(name) {
+      const upper = String(name || '').toUpperCase();
+      let cropKey = 'DEFAULT';
+      for (const key of Object.keys(MARKET_SIGNAL_MODEL)) {
+        if (key !== 'DEFAULT' && upper.includes(key)) {
+          cropKey = key;
+          break;
+        }
+      }
+      // Handle common alias in inventory naming.
+      if (cropKey === 'DEFAULT' && upper.includes('CORN')) cropKey = 'MAIZE';
+
+      const model = MARKET_SIGNAL_MODEL[cropKey] || MARKET_SIGNAL_MODEL.DEFAULT;
+      const currentYear = new Date().getFullYear();
+      const xNow = Math.max(model.latest_year, currentYear);
+      const predNow = model.intercept + model.slope_per_year * xNow;
+      const predNext = model.intercept + model.slope_per_year * (xNow + 1);
+      const momentumPct = predNow > 0 ? ((predNext - predNow) / predNow) * 100 : 0;
+      const score = clamp100(model.signal_score + momentumPct * 0.6);
+
+      return {
+        score: Number(score.toFixed(1)),
+        confidence: Number(model.confidence || 0.65),
+        reason: `ML market trend ${cropKey}: annual_trend ${model.trend_annual_pct}% | vol ${model.volatility_pct}% | conf ${Math.round((model.confidence || 0.65) * 100)}%`
+      };
+    }
