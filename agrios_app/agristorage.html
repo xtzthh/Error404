@@ -665,3 +665,21 @@
       }
     }
 
+// Core Logic
+    document.getElementById('addBtn').onclick = async () => {
+      await load();
+      const name = document.getElementById('cropName').value.trim().toUpperCase();
+      if (!name) return alert('ERR: ASSET_ID_REQUIRED');
+      
+      const obj = {
+        id: uid(),
+        name,
+        variety: document.getElementById('cropVar').value.trim().toUpperCase(),
+        qty: parseFloat(document.getElementById('cropQty').value) || 0,
+        unit: document.getElementById('cropUnit').value,
+        location: document.getElementById('cropLoc').value.trim().toUpperCase() || 'UNASSIGNED',
+        stored_at: document.getElementById('cropDate').value || new Date().toISOString().slice(0, 10),
+        shelf_months: parseInt(document.getElementById('cropShelf').value) || 0,
+        sold: false,
+        sold_at: null
+      };
