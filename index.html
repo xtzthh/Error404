@@ -498,7 +498,6 @@ function stabilizeIndoorValues(targets) {
     }
   }, 100);
 }
-
 function runIndoorDemo() {
   if (indoorDemoRunning) return;
   indoorDemoRunning = true;
@@ -572,4 +571,130 @@ function runIndoorDemo() {
       setTimeout(clearIndoorDemoAlert, 2200);
     }
   }, 3200);
->>>>>>> 6bebad4d5023bbc88b1426f43057dc3a501d5726
+
+  setTimeout(function () {
+    indoorDemoRunning = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('active');
+      btn.innerText = 'RUN_INDOOR_DEMO';
+    }
+    if (topBtn) {
+      topBtn.disabled = false;
+      topBtn.classList.remove('active');
+      topBtn.innerText = 'RUN_DEMO';
+    }
+    if (indoorStabilizeTimer) {
+      clearInterval(indoorStabilizeTimer);
+      indoorStabilizeTimer = null;
+    }
+    performAggressiveFetch();
+  }, 5600);
+}
+
+function getSmoothedCo2Ppm(rawValue) {
+  const minPpm = 300;
+  const maxPpm = 700;
+  const stepLimit = 18; // max change per update to avoid sudden drops/spikes
+  const targetProvided = Number.isFinite(rawValue) && rawValue >= 0;
+
+  if (targetProvided) {
+    const boundedTarget = Math.max(minPpm, Math.min(maxPpm, rawValue));
+    const delta = boundedTarget - co2DisplayPpm;
+    const step = Math.max(-stepLimit, Math.min(stepLimit, delta));
+    co2DisplayPpm += step;
+  } else {
+    // Fallback random-walk when ThingSpeak CO2 is missing
+    const jitter = (Math.random() * 8) - 4;
+    co2DisplayPpm += (co2DriftDir * 6) + jitter;
+  }
+
+  if (co2DisplayPpm >= maxPpm) {
+    co2DisplayPpm = maxPpm;
+    co2DriftDir = -1;
+  } else if (co2DisplayPpm <= minPpm) {
+    co2DisplayPpm = minPpm;
+    co2DriftDir = 1;
+  }
+
+  return co2DisplayPpm;
+}
+
+function getMaxPoints(range) {
+  switch (range) {
+    case '1h': return 6;
+    case '6h': return 36;
+    case 'week': return 168;
+    case '24h':
+    default: return 144;
+  }
+}
+
+function persistLiveBlockTelemetry(payload) {
+  try {
+    localStorage.setItem(liveBlockKey, JSON.stringify({
+      block: 'BLOCK_05',
+      timestamp: new Date().toISOString(),
+      temperature_c: Number.isFinite(payload.temperature_c) ? payload.temperature_c : null,
+      humidity_pct: Number.isFinite(payload.humidity_pct) ? payload.humidity_pct : null,
+      nh3_ppm: Number.isFinite(payload.nh3_ppm) ? payload.nh3_ppm : null,
+      co2_ppm: Number.isFinite(payload.co2_ppm) ? payload.co2_ppm : null,
+      source: payload.source || 'indoor_dashboard'
+    }));
+  } catch (_) {
+    // Ignore localStorage errors.
+  }
+}
+
+function updateHUDWithData(data) {
+  if (indoorDemoRunning) return;
+  // Mapping: field1:Temp, field2:Hum, field4:NH3, field5:Fire (used for CO2 display)
+  var t = data.field1 ? parseFloat(data.field1).toFixed(1) : "--";
+  var h = data.field2 ? parseFloat(data.field2).toFixed(1) : "--";
+  var tNum = data.field1 ? parseFloat(data.field1) : NaN;
+  var hNum = data.field2 ? parseFloat(data.field2) : NaN;
+  var rawCo2 = data.field5 ? parseFloat(data.field5) : NaN;
+  var co2 = getSmoothedCo2Ppm(rawCo2).toFixed(1);
+  var co2Num = parseFloat(co2);
+  var nh3 = data.field4 ? parseFloat(data.field4).toFixed(2) : "--";
+  var nh3Num = data.field4 ? parseFloat(data.field4) : NaN;
+  var fireRaw = data.field5 ? parseFloat(data.field5) : 0;
+  var fireVal = Number.isFinite(fireRaw) && fireRaw > 0 && fireRaw <= 1.5 ? 1 : 0;
+
+  var time = new Date().toLocaleTimeString();
+  
+  document.getElementById('cardTemp').innerText = t + " °C";
+  document.getElementById('cardHum').innerText = h + " %";
+  document.getElementById('cardSoil').innerText = nh3 + " ppm"; 
+  document.getElementById('cardAir').innerText = co2 + " ppm";
+  
+  const fireEl = document.getElementById('irFireStatus');
+  if (fireVal > 0) {
+    fireEl.innerText = '🔥 FIRE_DETECTED';
+    fireEl.style.color = '#ff4444';
+    fireEl.classList.add('glow-text');
+      } else {
+    fireEl.innerText = 'SAFE';
+    fireEl.style.color = 'var(--neon-green)';
+    fireEl.classList.remove('glow-text');
+  }
+
+  if (t !== "--" && h !== "--") {
+    chartData.labels.push(time);
+    chartData.indoorTemp.push(parseFloat(t));
+    chartData.indoorHum.push(parseFloat(h));
+    if (chartData.labels.length > maxPoints) {
+      chartData.labels.shift(); chartData.indoorTemp.shift(); chartData.indoorHum.shift();
+    }
+    if (chartIndoorTemp) chartIndoorTemp.update('none');
+    if (chartIndoorHum) chartIndoorHum.update('none');
+  }
+
+  persistLiveBlockTelemetry({
+    temperature_c: tNum,
+    humidity_pct: hNum,
+    nh3_ppm: nh3Num,
+    co2_ppm: Number.isFinite(co2Num) ? co2Num : rawCo2,
+    source: 'indoor_stream'
+  });
+}
