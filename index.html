@@ -14,7 +14,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
 
 <style>
   :root { --accent: var(--neon-green); }
@@ -36,9 +37,18 @@
     border-color: var(--error-red);
     color: var(--error-red);
   }
+  demo-alert-card {
+    border-color: var(--error-red) !important;
+    box-shadow: 0 0 18px rgba(255, 68, 68, 0.45);
+    animation: demo-alert-pulse 0.9s ease-in-out infinite;
   
   }
- 
+  demo-alert-card .stat-value,
+  .demo-alert-card .military-tag,
+  .demo-alert-card .block-icon {
+    color: var(--error-red) !important;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.45);
+    filter: drop-shadow(0 0 8px rgba(255, 68, 68, 0.45));
   }
   .demo-alert-card .stat-value,
   .demo-alert-card .military-tag,
