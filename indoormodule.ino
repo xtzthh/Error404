@@ -283,3 +283,29 @@ void checkNetwork(){
     modem.gprsConnect("www","","");
   }
 }
+
+/************************************************************
+                    SETUP FUNCTION
+************************************************************/
+void setup(){
+
+  SerialMon.begin(115200);
+
+  pinMode(FIRE_SENSOR_PIN, INPUT_PULLUP);
+  pinMode(SW420_PIN, INPUT_PULLDOWN);
+  pinMode(VENT_RELAY_PIN, OUTPUT);
+
+  dht.begin();
+  analogSetAttenuation(ADC_11db);
+
+  Wire.begin(I2C_SDA, I2C_SCL);
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.setTextColor(SSD1306_WHITE);
+
+  SerialAT.begin(9600,SERIAL_8N1,MODEM_RX,MODEM_TX);
+  delay(3000);
+
+  modem.restart();
+  modem.waitForNetwork();
+  modem.gprsConnect("www","","");
+}
